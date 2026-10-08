@@ -37,3 +37,6 @@ Thumbs.db
 
 # Claude Code workspace
 .claude/
+
+# Test cache
+.pytest_cache/

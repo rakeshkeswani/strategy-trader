@@ -34,7 +34,7 @@ Phase 0 (Foundations) — scaffold only. No code, no database, no Kite app yet.
 |---|---|---|
 | Daily prices 2024-01-01 onward (UDiFF) | MyInvestIQ archive, read-only | `BHAVCOPY_ARCHIVE_DIR` (prod: myinvestiq `data/bhavcopy/`) |
 | Index closes | MyInvestIQ archive, read-only | `INDEX_ARCHIVE_DIR` (prod: myinvestiq `data/indices/`) |
-| Daily prices 2014 to 2024-07-05 (legacy format) | `https://nsearchives.nseindia.com/content/historical/EQUITIES/{YYYY}/{MON}/cm{DD}{MON}{YYYY}bhav.csv.zip` — verified 2026-10-08 for 2014, 2016, 2019, 2023, Jul 2024 (`archives.` host 403s on 2014) | `LEGACY_BHAVCOPY_DIR` (ST-002) |
+| Daily prices 2014 to 2024-07-05 (legacy format) | `https://nsearchives.nseindia.com/content/historical/EQUITIES/{YYYY}/{MON}/cm{DD}{MON}{YYYY}bhav.csv.zip` — verified 2026-10-08 for 2014, 2016, 2019, 2023, Jul 2024 (`archives.` host 403s on 2014) | `/home/rakeshbk/myinvestiq/data/bhavcopy_legacy/` via `LEGACY_BHAVCOPY_DIR`; one-time download, this project is the only writer (ST-002) |
 | Corporate actions (splits, bonuses) | NSE corporate actions; reuse MyInvestIQ `core/corporate_actions.py` | ST-003 |
 | Fundamentals, sector | Trendlyne Nifty 500 Data Downloader export, dropped weekly by Rakesh | `TRENDLYNE_DROP_DIR` on rkneo50q, network share from Windows (ST-005) |
 | FII flows | MyInvestIQ `fii_daily_flow` table | read-only |

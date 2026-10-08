@@ -64,7 +64,9 @@ ML and code may never change this objective.
 - MyInvestIQ's archives (UDiFF bhavcopy from 2024-01-01, index closes) are **read-only**,
   via `BHAVCOPY_ARCHIVE_DIR` / `INDEX_ARCHIVE_DIR`. Never write to them.
 - Legacy bhavcopy (2014 to Jul 2024, `nsearchives.nseindia.com/content/historical/EQUITIES/`)
-  lives in this project's own archive (`LEGACY_BHAVCOPY_DIR`), on rkneo50q.
+  is downloaded once by this project (ST-002) into `/home/rakeshbk/myinvestiq/data/bhavcopy_legacy/`
+  (`LEGACY_BHAVCOPY_DIR`). This project is its only writer. Daily files are never downloaded here;
+  they come from MyInvestIQ's own 18:00 job.
 - Join prices by symbol, never ISIN (see MyInvestIQ `core/bhavcopy_reader.py`).
 - Returns are price return (no dividends) unless a decision changes this.
 - Backtests: walk-forward only; 2024-2026 held out until a strategy's final check.

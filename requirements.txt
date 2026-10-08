@@ -1,0 +1,7 @@
+# strategy-trader — Python 3.12+ (prod 3.12, dev 3.14)
+requests>=2.31.0
+python-dotenv>=1.0.0
+# validation scripts only
+yfinance>=0.2.36
+# tests
+pytest>=8.0.0

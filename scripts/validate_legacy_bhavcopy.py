@@ -129,7 +129,7 @@ def main() -> int:
     ap.add_argument('--skip-overlap', action='store_true')
     ap.add_argument('--skip-calendar', action='store_true')
     args = ap.parse_args()
-    LOG_DIR.mkdir(exist_ok=True)
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
     logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s',
                         handlers=[logging.StreamHandler(sys.stdout)])
 
@@ -153,6 +153,8 @@ def main() -> int:
         w.writerow(['check', 'date', 'symbol', 'field', 'legacy', 'udiff_or_note'])
         w.writerows(issues)
     logger.info(f'{len(issues)} issue rows -> {out}')
+    for row in issues[:40]:
+        logger.info('  ' + ' | '.join(str(x) for x in row if x != ''))
     logger.info('RESULT: ' + ('FAIL -- review the issue file' if failed else 'PASS'))
     return 1 if failed else 0
 

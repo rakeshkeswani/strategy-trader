@@ -199,7 +199,7 @@ def run(dates: list[date], archive_dir: Path, retry_404: bool, force: bool) -> d
 
 def _setup_logging() -> None:
     """Log to stdout and logs/fetch_legacy_bhavcopy_<date>.log."""
-    LOG_DIR.mkdir(exist_ok=True)
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
     logging.basicConfig(
         level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s',
         handlers=[logging.StreamHandler(sys.stdout),

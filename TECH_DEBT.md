@@ -5,7 +5,7 @@ Status values: Open, In progress, In review, Resolved (Resolved needs a prod_con
 | ID | Title | Phase | Status |
 |---|---|---|---|
 | ST-001 | Project scaffold: CLAUDE.md, PROJECT_CONTEXT.md, TECH_DEBT.md, .gitignore, .env.example, folders | P0 | In review |
-| ST-002 | Legacy bhavcopy backfill 2014 to Jul 2024 (nsearchives, throttled) + reader validated against UDiFF Jan-Jul 2024 | P0 | In progress |
+| ST-002 | Legacy bhavcopy backfill 2014 to Jul 2024 (nsearchives, throttled) + reader validated against UDiFF Jan-Jul 2024 | P0 | In review |
 | ST-003 | Split/bonus adjustment for every Nifty 500 stock (corporate actions history) | P0 | Open |
 | ST-004 | Point-in-time universe: top 500 by traded value per quarter, delisted stocks kept | P0 | Open |
 | ST-005 | Trendlyne weekly drop folder on rkneo50q, Windows network share, importer | P0 | Open |
@@ -16,6 +16,7 @@ Status values: Open, In progress, In review, Resolved (Resolved needs a prod_con
 | ST-010 | Baseline momentum strategy config + quick backtest | P0 | Open |
 | ST-011 | Telegram proposal and approval flow | P0 | Open |
 | ST-012 | Project database on existing PostgreSQL (name, schema) | P0 | Open |
+| ST-013 | Symbol changes: stitch renamed symbols into one history (same ISIN, old symbol ends / new begins next session); cross-check NSE symbol-change list | P0 | Open |
 
 ## ST-001 — Project scaffold
 - Opened: 2026-10-08
@@ -35,5 +36,12 @@ Status values: Open, In progress, In review, Resolved (Resolved needs a prod_con
   - `tests/test_legacy_bhavcopy.py` — 9 unit tests, synthetic files, no network
 - Acceptance: validate script PASS — zero OHLC/volume mismatches in the overlap, every 404 weekday a
   Nifty non-trading day, no un-fetched weekend sessions, no ERROR/INVALID rows.
-- Dev tests: 9 passed (2026-10-08)
+- Dev tests: 10 passed (2026-10-08)
+- Prod run 2026-10-08: 2,590 legacy files OK (2014-01-01..2024-07-05), 153 weekday 404s all NSE holidays,
+  1 INVALID (2020-07-13, 2-digit-year TIMESTAMP) fixed and re-fetched; 7 special weekend sessions fetched
+  (2015-02-28, 2020-02-01, 2020-11-14, 2023-11-12, 2024-01-20, 2024-03-02, 2024-05-18).
+- UDiFF gap 2024-01-03..2025-08-27: fetched with MyInvestIQ's fetcher, then moved out of its archive into
+  data/strategy_trader/bhavcopy_udiff/ (scripts/relocate_udiff_gap.py) so MyInvestIQ's behaviour is unchanged.
+- Validation PASS 2026-10-08: overlap 125 dates, 267,237 symbol-days, 0 mismatches; traded_value units equal.
+- Known limitation: other weekend special sessions (e.g. Sunday Muhurat) may be missing; impact negligible.
 - prod_confirmed: —

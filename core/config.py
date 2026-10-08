@@ -10,7 +10,6 @@ from dotenv import load_dotenv
 REPO_ROOT = Path(__file__).resolve().parent.parent
 load_dotenv(dotenv_path=REPO_ROOT / '.env')
 
-LOG_DIR = REPO_ROOT / 'logs'
 
 
 def _dir_from_env(var: str, default: Path | None = None) -> Path | None:
@@ -18,6 +17,10 @@ def _dir_from_env(var: str, default: Path | None = None) -> Path | None:
     value = (os.getenv(var) or '').strip()
     return Path(value) if value else default
 
+
+# Logs. Prod sets LOG_DIR=/home/rakeshbk/myinvestiq/data/strategy_trader/logs so they are readable
+# from Windows over the existing MyInvestIQ share (Z:\\data\\strategy_trader\\logs).
+LOG_DIR = _dir_from_env('LOG_DIR', REPO_ROOT / 'logs')
 
 # Pre-2024 legacy-format bhavcopy archive written once by ingestion/fetch_legacy_bhavcopy.py.
 # Prod: /home/rakeshbk/myinvestiq/data/bhavcopy_legacy. Dev: point at prod's share (read-only).

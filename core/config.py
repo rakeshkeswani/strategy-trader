@@ -27,3 +27,8 @@ LEGACY_BHAVCOPY_DIR = _dir_from_env('LEGACY_BHAVCOPY_DIR', REPO_ROOT / 'data' / 
 # this project must never silently read or create a local copy.
 BHAVCOPY_ARCHIVE_DIR = _dir_from_env('BHAVCOPY_ARCHIVE_DIR')
 INDEX_ARCHIVE_DIR = _dir_from_env('INDEX_ARCHIVE_DIR')
+
+# This project's own UDiFF files for dates MyInvestIQ's archive does not hold (2024-01-03 to
+# 2025-08-27, relocated 2026-10-08 by scripts/relocate_udiff_gap.py). Read-only after that.
+# Prod: /home/rakeshbk/myinvestiq/data/strategy_trader/bhavcopy_udiff
+UDIFF_GAP_DIR = _dir_from_env('UDIFF_GAP_DIR')

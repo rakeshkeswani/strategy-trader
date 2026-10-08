@@ -33,6 +33,7 @@ Phase 0 (Foundations) — scaffold only. No code, no database, no Kite app yet.
 | Data | Source | Location |
 |---|---|---|
 | Daily prices 2024-01-01 onward (UDiFF) | MyInvestIQ archive, read-only | `BHAVCOPY_ARCHIVE_DIR` (prod: myinvestiq `data/bhavcopy/`) |
+| Daily prices 2024-01-03 to 2025-08-27 (UDiFF) | One-time fetch by MyInvestIQ's own fetcher on 2026-10-08, relocated out of its archive (it would have changed MyInvestIQ's Sunday price-history job) | `/home/rakeshbk/myinvestiq/data/strategy_trader/bhavcopy_udiff/` via `UDIFF_GAP_DIR`; 403 NSE + 403 BSE files + manifest.csv |
 | Index closes | MyInvestIQ archive, read-only | `INDEX_ARCHIVE_DIR` (prod: myinvestiq `data/indices/`) |
 | Daily prices 2014 to 2024-07-05 (legacy format) | `https://nsearchives.nseindia.com/content/historical/EQUITIES/{YYYY}/{MON}/cm{DD}{MON}{YYYY}bhav.csv.zip` — verified 2026-10-08 for 2014, 2016, 2019, 2023, Jul 2024 (`archives.` host 403s on 2014) | `/home/rakeshbk/myinvestiq/data/bhavcopy_legacy/` via `LEGACY_BHAVCOPY_DIR`; one-time download, this project is the only writer (ST-002) |
 | Corporate actions (splits, bonuses) | NSE corporate actions; reuse MyInvestIQ `core/corporate_actions.py` | ST-003 |

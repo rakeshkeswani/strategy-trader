@@ -112,3 +112,21 @@ def test_refuses_network_share():
     from pathlib import PureWindowsPath
     assert fetch._is_network_share(PureWindowsPath(r'\\100.103.189.15\myinvestiq\data'))
     assert not fetch._is_network_share(PureWindowsPath('/home/rakeshbk/myinvestiq/data/bhavcopy_legacy'))
+
+
+def test_udiff_reads_myinvestiq_first_then_gap_dir(tmp_path):
+    header = ('TradDt,TckrSymb,SctySrs,OpnPric,HghPric,LwPric,ClsPric,PrvsClsgPric,TtlTradgVol,TtlTrfVal,ISIN')
+    def write(folder, d, close):
+        folder.mkdir(parents=True, exist_ok=True)
+        csv_text = header + f'\n{d.isoformat()},RELIANCE,EQ,1,1,1,{close},1,1,1,INE002A01018\n'
+        name = udiff.NSE_FILENAME_TMPL.format(date_str=d.strftime('%Y%m%d'))
+        (folder / name).write_bytes(zip_bytes(csv_text, name[:-4]))
+    main, gap = tmp_path / 'myinvestiq', tmp_path / 'gap'
+    d_both, d_gap, d_none = date(2024, 1, 3), date(2024, 1, 4), date(2024, 1, 5)
+    write(main, d_both, 100.0)
+    write(gap, d_both, 999.0)
+    write(gap, d_gap, 200.0)
+    assert udiff.read_ohlcv_for_date(d_both, main, gap)['RELIANCE']['close'] == 100.0  # MyInvestIQ wins
+    assert udiff.read_ohlcv_for_date(d_gap, main, gap)['RELIANCE']['close'] == 200.0
+    with pytest.raises(BhavcopyDateMissingError):
+        udiff.read_ohlcv_for_date(d_none, main, gap)

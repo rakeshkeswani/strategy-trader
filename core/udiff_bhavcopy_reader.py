@@ -10,6 +10,8 @@ Differences from the original:
   - Adds traded_value (TtlTrfVal), isin and series -- ST-004 ranks stocks by traded value.
   - Archive location comes ONLY from BHAVCOPY_ARCHIVE_DIR; there is no default, and this
     module never writes anywhere.
+  - A date missing from MyInvestIQ's archive is then looked up in UDIFF_GAP_DIR (this
+    project's own files for 2024-01-03 to 2025-08-27). MyInvestIQ's archive always wins.
 """
 
 import csv
@@ -18,7 +20,7 @@ import zipfile
 from datetime import date
 from pathlib import Path
 
-from core.config import BHAVCOPY_ARCHIVE_DIR
+from core.config import BHAVCOPY_ARCHIVE_DIR, UDIFF_GAP_DIR
 from core.legacy_bhavcopy_reader import BhavcopyDateMissingError, BhavcopyFormatError
 
 NSE_EQUITY_SERIES = {'EQ', 'BE'}
@@ -69,16 +71,31 @@ def parse_udiff_csv(csv_text: str) -> dict:
     return out
 
 
-def read_ohlcv_for_date(target_date: date, archive_dir: Path | None = None) -> dict:
-    """Read one date's NSE UDiFF bhavcopy from MyInvestIQ's archive.
+def _find_file(target_date: date, archive_dir: Path | None, gap_dir: Path | None) -> Path:
+    """Return the NSE file for `target_date`: MyInvestIQ's archive first, then the gap dir.
 
     Raises:
-        BhavcopyDateMissingError: no NSE file for this date.
+        BhavcopyDateMissingError: in neither location.
+    """
+    name = NSE_FILENAME_TMPL.format(date_str=target_date.strftime('%Y%m%d'))
+    primary = _archive_dir(archive_dir) / name
+    if primary.exists():
+        return primary
+    gap = gap_dir if gap_dir is not None else UDIFF_GAP_DIR
+    if gap is not None and (gap / name).exists():
+        return gap / name
+    raise BhavcopyDateMissingError(target_date)
+
+
+def read_ohlcv_for_date(target_date: date, archive_dir: Path | None = None,
+                        gap_dir: Path | None = None) -> dict:
+    """Read one date's NSE UDiFF bhavcopy (MyInvestIQ's archive, else this project's gap dir).
+
+    Raises:
+        BhavcopyDateMissingError: no NSE file for this date in either location.
         BhavcopyFormatError: unreadable zip.
     """
-    path = _archive_dir(archive_dir) / NSE_FILENAME_TMPL.format(date_str=target_date.strftime('%Y%m%d'))
-    if not path.exists():
-        raise BhavcopyDateMissingError(target_date)
+    path = _find_file(target_date, archive_dir, gap_dir)
     try:
         with zipfile.ZipFile(path) as zf:
             names = [n for n in zf.namelist() if n.lower().endswith('.csv')]

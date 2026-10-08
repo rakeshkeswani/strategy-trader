@@ -33,6 +33,7 @@ from ingestion.fetch_legacy_bhavcopy import DEFAULT_START, load_manifest
 
 logger = logging.getLogger('validate_legacy_bhavcopy')
 EXACT_FIELDS = ('open', 'high', 'low', 'close', 'prev_close', 'volume')
+MIN_OVERLAP_DATES = 100  # Jan-Jul 2024 has ~125 sessions; fewer means a source is missing files
 
 
 def check_overlap(issues: list) -> dict:
@@ -142,7 +143,9 @@ def main() -> int:
     if not args.skip_overlap:
         ov = check_overlap(issues)
         logger.info(f'OVERLAP: {ov}')
-        failed |= bool(ov['field_mismatches']) or ov['dates_compared'] == 0
+        failed |= bool(ov['field_mismatches']) or ov['dates_compared'] < MIN_OVERLAP_DATES
+        if ov['dates_compared'] < MIN_OVERLAP_DATES:
+            logger.warning(f"only {ov['dates_compared']} overlap dates (< {MIN_OVERLAP_DATES})")
 
     out = LOG_DIR / f'validate_legacy_bhavcopy_{date.today():%Y%m%d}.csv'
     with out.open('w', newline='', encoding='utf-8') as f:

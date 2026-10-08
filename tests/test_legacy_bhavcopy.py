@@ -43,6 +43,7 @@ def test_filename_url_and_timestamp():
                                 '2014/JAN/cm02JAN2014bhav.csv.zip')
     assert legacy.legacy_timestamp(date(2023, 12, 29)) == '29-DEC-2023'
     assert legacy.parse_timestamp('29-DEC-2023') == date(2023, 12, 29)
+    assert legacy.parse_timestamp('13-Jul-20') == date(2020, 7, 13)  # real variant, 2020-07-13 file
 
 
 def test_parse_keeps_only_equity_series_with_all_fields():
@@ -57,6 +58,10 @@ def test_parse_keeps_only_equity_series_with_all_fields():
 def test_wrong_date_and_missing_columns_fail_loudly():
     with pytest.raises(BhavcopyFormatError, match='TIMESTAMP'):
         legacy.parse_legacy_csv(legacy_csv(ts='03-JAN-2014'), expected_date=D)
+    with pytest.raises(BhavcopyFormatError, match='unparseable'):
+        legacy.parse_legacy_csv(legacy_csv(ts='2014/01/02'), expected_date=D)
+    # short-year variant for the right date is accepted
+    assert 'RELIANCE' in legacy.parse_legacy_csv(legacy_csv(ts='02-Jan-14'), expected_date=D)
     with pytest.raises(BhavcopyFormatError, match='missing columns'):
         legacy.parse_legacy_csv('SYMBOL,SERIES,CLOSE\nX,EQ,1\n', expected_date=D)
 

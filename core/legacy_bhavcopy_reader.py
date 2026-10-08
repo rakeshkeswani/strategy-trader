@@ -97,13 +97,20 @@ def parse_legacy_csv(csv_text: str, expected_date: date | None = None) -> dict:
     if missing:
         raise BhavcopyFormatError(f'missing columns: {sorted(missing)}')
 
-    expected_ts = legacy_timestamp(expected_date).upper() if expected_date else None
+    seen_ts: dict = {}  # TIMESTAMP string -> parsed date (one parse per distinct string)
     out: dict = {}
     for raw in reader:
         row = {(k or '').strip(): (v or '').strip() for k, v in raw.items() if k is not None}
-        if expected_ts and row.get('TIMESTAMP', '').upper() != expected_ts:
-            raise BhavcopyFormatError(
-                f"TIMESTAMP {row.get('TIMESTAMP')!r} != expected {expected_ts!r}")
+        if expected_date:
+            ts = row.get('TIMESTAMP', '')
+            if ts not in seen_ts:
+                try:
+                    seen_ts[ts] = parse_timestamp(ts)
+                except ValueError:
+                    raise BhavcopyFormatError(f'unparseable TIMESTAMP {ts!r}') from None
+            if seen_ts[ts] != expected_date:
+                raise BhavcopyFormatError(
+                    f'TIMESTAMP {ts!r} is {seen_ts[ts]}, expected {expected_date}')
         if row.get('SERIES') not in NSE_EQUITY_SERIES:
             continue
         symbol = row.get('SYMBOL')
@@ -154,5 +161,18 @@ def read_ohlcv_for_date(target_date: date, archive_dir: Path | None = None) -> d
 
 
 def parse_timestamp(value: str) -> date:
-    """Parse a legacy TIMESTAMP like 02-JAN-2014 into a date."""
-    return datetime.strptime(value.strip().title(), '%d-%b-%Y').date()
+    """Parse a legacy TIMESTAMP into a date.
+
+    NSE is not consistent: almost every file prints 02-JAN-2014, but at least one
+    (2020-07-13) prints 13-Jul-20. Both 4- and 2-digit years are accepted.
+
+    Raises:
+        ValueError: neither format matches.
+    """
+    v = value.strip().title()
+    for fmt in ('%d-%b-%Y', '%d-%b-%y'):
+        try:
+            return datetime.strptime(v, fmt).date()
+        except ValueError:
+            continue
+    raise ValueError(f'unrecognised TIMESTAMP {value!r}')

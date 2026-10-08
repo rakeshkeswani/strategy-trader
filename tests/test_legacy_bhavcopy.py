@@ -111,7 +111,7 @@ def test_prices_routes_by_date(monkeypatch):
 def test_refuses_network_share():
     from pathlib import PureWindowsPath
     assert fetch._is_network_share(PureWindowsPath(r'\\100.103.189.15\myinvestiq\data'))
-    assert not fetch._is_network_share(PureWindowsPath('/home/rakeshbk/myinvestiq/data/bhavcopy_legacy'))
+    assert not fetch._is_network_share(PureWindowsPath('/home/rakeshbk/strategy-trader/data/bhavcopy_legacy'))
 
 
 def test_udiff_reads_myinvestiq_first_then_gap_dir(tmp_path):

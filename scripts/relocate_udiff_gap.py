@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 # scripts/relocate_udiff_gap.py
 """
+HISTORICAL -- DO NOT RE-RUN. Ran once on 2026-10-08. Its DEST was later moved to
+/home/rakeshbk/strategy-trader/data/bhavcopy_udiff (docs/CONFIG.md); kept as a record.
+
 ST-002 one-off (2026-10-08): undo the UDiFF backfill that was run into MyInvestIQ's archive.
 
 On 2026-10-08 MyInvestIQ's own fetcher was run with

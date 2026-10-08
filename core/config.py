@@ -18,12 +18,11 @@ def _dir_from_env(var: str, default: Path | None = None) -> Path | None:
     return Path(value) if value else default
 
 
-# Logs. Prod sets LOG_DIR=/home/rakeshbk/myinvestiq/data/strategy_trader/logs so they are readable
-# from Windows over the existing MyInvestIQ share (Z:\\data\\strategy_trader\\logs).
+# Logs. Default <repo>/logs; on prod that is readable from Windows at X:\\logs (docs/CONFIG.md).
 LOG_DIR = _dir_from_env('LOG_DIR', REPO_ROOT / 'logs')
 
 # Pre-2024 legacy-format bhavcopy archive written once by ingestion/fetch_legacy_bhavcopy.py.
-# Prod: /home/rakeshbk/myinvestiq/data/bhavcopy_legacy. Dev: point at prod's share (read-only).
+# Prod: default (<repo>/data/bhavcopy_legacy). Dev: point at prod's share (read-only).
 LEGACY_BHAVCOPY_DIR = _dir_from_env('LEGACY_BHAVCOPY_DIR', REPO_ROOT / 'data' / 'bhavcopy_legacy')
 
 # MyInvestIQ's UDiFF archive (2024-01-01 onward). READ-ONLY for this project. No default:
@@ -32,6 +31,5 @@ BHAVCOPY_ARCHIVE_DIR = _dir_from_env('BHAVCOPY_ARCHIVE_DIR')
 INDEX_ARCHIVE_DIR = _dir_from_env('INDEX_ARCHIVE_DIR')
 
 # This project's own UDiFF files for dates MyInvestIQ's archive does not hold (2024-01-03 to
-# 2025-08-27, relocated 2026-10-08 by scripts/relocate_udiff_gap.py). Read-only after that.
-# Prod: /home/rakeshbk/myinvestiq/data/strategy_trader/bhavcopy_udiff
-UDIFF_GAP_DIR = _dir_from_env('UDIFF_GAP_DIR')
+# 2025-08-27; docs/CONFIG.md "one-off operations"). Read-only. Prod: default (<repo>/data/bhavcopy_udiff).
+UDIFF_GAP_DIR = _dir_from_env('UDIFF_GAP_DIR', REPO_ROOT / 'data' / 'bhavcopy_udiff')

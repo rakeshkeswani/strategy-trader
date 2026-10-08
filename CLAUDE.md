@@ -64,7 +64,7 @@ ML and code may never change this objective.
 - MyInvestIQ's archives (UDiFF bhavcopy from 2024-01-01, index closes) are **read-only**,
   via `BHAVCOPY_ARCHIVE_DIR` / `INDEX_ARCHIVE_DIR`. Never write to them.
 - Legacy bhavcopy (2014 to Jul 2024, `nsearchives.nseindia.com/content/historical/EQUITIES/`)
-  is downloaded once by this project (ST-002) into `/home/rakeshbk/myinvestiq/data/bhavcopy_legacy/`
+  is downloaded once by this project (ST-002) into `/home/rakeshbk/strategy-trader/data/bhavcopy_legacy/`
   (`LEGACY_BHAVCOPY_DIR`). This project is its only writer. Daily files are never downloaded here;
   they come from MyInvestIQ's own 18:00 job.
 - Join prices by symbol, never ISIN (see MyInvestIQ `core/bhavcopy_reader.py`).
@@ -80,7 +80,82 @@ for DB connections, None-checks on fetch results.
 
 ## Environments
 
-| | Windows dev | Ubuntu prod (rkneo50q) |
-|---|---|---|
-| Repo | `C:\RKOneDrive\OneDrive\Work\RKInvesting` | `/home/rakeshbk/strategy-trader` (proposed) |
-| Data | reads prod share | `/home/rakeshbk/strategy-trader-data/` |
+See `docs/CONFIG.md` (machines, folder layout, shares X:/Z:, env vars, one-off operations).
+Prod repo: `/home/rakeshbk/strategy-trader` (venv: `source venv/bin/activate`). Windows: `C:\RKOneDrive\OneDrive\Work\RKInvesting`.
+**Each project's prod folder is its own** — strategy-trader never writes under `/home/rakeshbk/myinvestiq/`.
+
+---
+
+## Change workflow (adopted from MyInvestIQ, 2026-10-08)
+
+1. **Discuss** the issue; Claude proposes the design. Nothing is coded before Rakesh approves.
+2. **Done when** is written into `tech-debt/ST-NNN.md` before the fix exists — observable behaviour,
+   **plus a falsifying clause** (the state that must NOT exist). Assume a count can lie.
+3. **Branch per ST:** Rakesh runs `git switch -c st/ST-NNN-short-name`. Never commit to `main` directly.
+4. Claude writes code on the branch in the Windows working copy and runs tests.
+5. Claude gives commit commands with **explicit file names** — never `git add .` — then
+   `git status` before and `git show HEAD --name-only` after, to confirm exactly what was committed.
+6. Rakesh reviews the changed files (not the summary), merges to `main`, pushes, `git pull` on prod.
+7. Prod verification against Done-when. **Resolved only when Rakesh confirms** and gives a prod_confirmed date.
+
+### Status values (index only — `TECH_DEBT.md` is the single place status lives)
+
+| Status | Meaning |
+|---|---|
+| `Not started` | logged, nothing done |
+| `Design proposed` | design sent, awaiting Rakesh's approval |
+| `In progress — branch st/…` | code being written |
+| `Code complete — awaiting review` | tests pass, commit given to Rakesh |
+| `Tested in Dev — awaiting merge` | Rakesh approved |
+| `Merged to main — awaiting prod deploy` | merged and pushed |
+| `Moved to Prod — pending verification` | pulled/run on prod |
+| `Resolved` | Done-when verified on prod, Rakesh confirmed, docs updated |
+
+Claude never advances a status on assumption — it waits for Rakesh's words ("approve", "on prod", "prod confirmed").
+
+### Issue standard
+- Next free ST number; one row in `TECH_DEBT.md`; full detail in `tech-debt/ST-NNN.md` with frontmatter
+  (`id, title, status, priority, area, since, prod_confirmed, docs, docs_updated`). Frontmatter mirrors the index;
+  if they disagree the index is right.
+- **Doc gate:** no ST reaches `Resolved` until every doc it impacts is updated and `docs:` / `docs_updated:` are filled
+  (`none` allowed, but must be written).
+
+### Which doc for which change
+paths, env vars, shares, servers, schedules, one-off ops → `docs/CONFIG.md` | data source, format, trap →
+`docs/DATA_SOURCES.md` | module, entry point, call chain → `docs/CODE_MAP.md` | DB schema → `docs/DATABASE.md`
+(when it exists) | a decision or a corrected understanding → append to `vault/LEARNINGS.md` (never rewrite).
+
+---
+
+## Standing rules carried over from MyInvestIQ
+
+- **SQL is always a runnable shell command:** `psql -h localhost -U portfolio_rk -d portfolio_watch -c "…"`;
+  multi-statement → heredoc with output to `/home/rakeshbk/strategy-trader/logs/<name>_<date>.txt 2>&1`
+  (readable on Windows at `X:\logs\`). Never a bare SQL or Python block. Never guess column names.
+- **Docstrings are updated whenever a function is touched.** When code and docstring disagree, the docstring is a bug.
+- **A written instruction is evidence of what was true when written, not of what is true now** — check before acting.
+- Debug/scratch scripts are not committed.
+
+---
+
+## Session rituals
+
+**Start:** read `TECH_DEBT.md` (fresh) and the tail of `SESSION_LOG.md`; `git status` + current branch on Windows;
+on prod, `ls ~/strategy-trader/logs | tail` for the latest run; state current priorities.
+
+**Close:**
+1. Update `TECH_DEBT.md` statuses (only on Rakesh's confirmation) and `tech-debt/ST-NNN.md` details.
+2. Append the session to `SESSION_LOG.md` (STs touched, commits, prod actions, status at close).
+3. Doc check for every ST touched (table above); append any decision/correction to `vault/LEARNINGS.md`.
+4. Update `PROJECT_CONTEXT.md` if status/phase changed.
+5. Give explicit-file commit commands.
+
+## File reading rules
+
+| File | Rule |
+|---|---|
+| `TECH_DEBT.md` | always read fresh — never from memory |
+| `SESSION_LOG.md` | read the tail at session start |
+| `docs/CONFIG.md` | read before giving any path, env var or prod command |
+| `docs/DATA_SOURCES.md` | read before touching ingestion or readers |
+| MyInvestIQ repo | read-only reference; changes there go through MyInvestIQ's own process |

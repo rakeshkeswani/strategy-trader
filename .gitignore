@@ -1,0 +1,39 @@
+# Secrets — never commit
+.env
+*.env
+!.env.example
+APIKeys.txt
+*.pem
+kite_session*.json
+
+# Data (lives on rkneo50q, not in git)
+data/
+*.zip
+*.csv
+*.xlsx
+*.parquet
+
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+env/
+
+# Models and experiment tracking
+mlruns/
+models/*.pkl
+models/*.joblib
+
+# Logs
+logs/
+*.log
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Claude Code workspace
+.claude/

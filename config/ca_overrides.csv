@@ -1,0 +1,2 @@
+kind,symbol,ex_date,action_type,adjustment_factor,reason
+VOID,DVL,2021-08-05,BONUS,,"Feed: Bonus 1:2. Price never moved: 300.75 -> 281.05 (-6.5%) on ex_date, same ISIN INE477B01010 before and after, no move < -12% Jun 2021-Mar 2022 (checked 2026-10-11). Not an equity bonus."

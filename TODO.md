@@ -47,7 +47,9 @@ Last updated: 2026-10-11 (ST-001/002/014 resolved; ST-015 finishing).
   Rakesh 2026-10-11: the final system must handle these -- e.g. gap-down / circuit handling for GTT stops, and
   news checks before buys.
 - ST-004: EASTSILK (and any symbol with a capital reduction during a suspension) has an incomparable price series
-  across the gap; universe filters keep penny stocks out anyway.
+  across the gap; universe filters keep penny stocks out anyway. ST-013 found the same for post-insolvency relistings
+  (INDOSOLAR->WAAREEINDO, SPENTEX->CLCIND, NTL->NEUEON): start a new series at a run gap > 30 days with an ISIN change.
+  Identities come from `core/securities.py` (key = today's symbol).
 - ST-005 (Trendlyne): the `[strategy-trader]` Samba share is read-only (Samba default), so the weekly drop needs a
   writable path — e.g. a folder on the rkfspool share (Y:) that the importer reads.
 - ST-006 (Kite): keys in `.env` → exclude `.env` from the backup mirror (see backup handover).

@@ -12,6 +12,7 @@ Present tense. Update when a module, entry point or call chain changes.
 | `python -m ingestion.fetch_symbol_changes` | snapshot of NSE's symbol-change list (run before the CA fetch) | `SYMBOL_CHANGES_DIR` |
 | `python -m ingestion.fetch_corporate_actions_history [--years Y.. --force]` | one-time CA history 2014..2025-08-25; reuses `raw/` | `CORPORATE_ACTIONS_DIR`, `LOG_DIR` |
 | `python -m scripts.validate_corporate_actions [--start --end --skip-spot]` | ST-003 acceptance checks (jump scan over prices) | `LOG_DIR` |
+| `python -m scripts.validate_symbol_changes [--start --end]` | ST-013 acceptance checks (renames proved by price runs, ISIN continuity) | `LOG_DIR` |
 | `python -m pytest -q tests` | unit tests (no network) | — |
 
 ## Modules
@@ -27,6 +28,8 @@ Present tense. Update when a module, entry point or call chain changes.
 | `core/symbol_changes.py` | `load_changes()` (NSE snapshot + `config/symbol_changes_extra.csv`), `symbol_on(changes, symbol, date)` |
 | `core/corporate_actions.py` | `parse_subject()`, `classify_records()` (feed → rows under the symbol in use on ex_date), `write_history()`, `load_history()` (+ `config/ca_overrides.csv`), `cumulative_factor()`, `adjust_price()`, `adjust_volume()` |
 | `ingestion/fetch_symbol_changes.py` | downloads `symbolchange.csv`; keeps the previous snapshot |
+| `core/securities.py` | `Securities.load()`; `key_on(symbol, date)` (company key = today's symbol), `symbols_for(key)`, `symbol_for_key_on(key, date)`, `read_stitched_ohlcv(key, start, end)`; `is_equity()` shared with the ST-003 validator |
+| `scripts/validate_symbol_changes.py` | price runs per symbol; confirms listed renames at the stitch; finds same-ISIN handovers missing from the list |
 | `ingestion/fetch_corporate_actions_history.py` | one call per year, raw JSON kept, `history.csv` written; fails on unclassified subjects |
 | `scripts/validate_corporate_actions.py` | feed re-parse, jump scan (equities), PREVCLOSE probe, yfinance spot check; reads `config/ca_exceptions.csv` |
 
@@ -37,6 +40,7 @@ Present tense. Update when a module, entry point or call chain changes.
 | `config/ca_overrides.csv` | `load_history()` | VOID a feed action that did not change the equity scale / ADD a missing factor; a stale VOID raises |
 | `config/symbol_changes_extra.csv` | `load_changes()` | renames missing from NSE's list (same 4-column format) |
 | `config/ca_exceptions.csv` | validator only | explains genuine crashes (`drop`) and records capital-reduction decisions (`review`) |
+| `config/symbol_exceptions.csv` | ST-013 validator | optional; `not_rename` (a same-ISIN handover that is not a rename) / `rename_ok` (reviewed stitch). None needed 2026-10-11 |
 
 ## Call chain
 

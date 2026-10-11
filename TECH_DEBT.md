@@ -20,4 +20,4 @@ Workflow, status values and gates: `CLAUDE.md` → "Change workflow".
 | [ST-012](tech-debt/ST-012.md) | Project database + read-only role on MyInvestIQ DB | Med | Not started | 2026-10-08 | database | — |
 | [ST-013](tech-debt/ST-013.md) | Symbol changes (stitch renames via ISIN) | High | Not started | 2026-10-08 | data | before ST-004 |
 | [ST-014](tech-debt/ST-014.md) | Workflow + docs (MyInvestIQ-style), own prod folder + X: share | High | Resolved | 2026-10-08 | repo | — (prod confirmed 2026-10-11) |
-| [ST-015](tech-debt/ST-015.md) | Housekeeping: .gitattributes, git command conventions, sign-offs | Med | In progress — branch st/ST-015-housekeeping | 2026-10-11 | repo | see TODO.md |
+| [ST-015](tech-debt/ST-015.md) | Housekeeping: .gitattributes, git command conventions, sign-offs | Med | Resolved | 2026-10-11 | repo | — (prod confirmed 2026-10-11, merge `1a66fc2`) |

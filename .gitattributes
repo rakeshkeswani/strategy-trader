@@ -1,0 +1,3 @@
+# Line endings (ST-015, 2026-10-11): repo and both working copies use LF.
+# Ends the "LF will be replaced by CRLF" warnings on Windows and whole-file diffs between laptop and prod.
+* text=auto eol=lf

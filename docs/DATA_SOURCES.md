@@ -35,14 +35,40 @@ Present tense. Each trap here was hit for real; the date says when.
 then `UDIFF_GAP_DIR`. Returns `{symbol: {open, high, low, close, prev_close, volume, traded_value, isin, series, source}}`.
 A missing file raises `BhavcopyDateMissingError`; a missing symbol is simply absent.
 
-## Corporate actions (ST-003 — design)
+## Corporate actions (ST-003)
 
 NSE `https://www.nseindia.com/api/corporates-corporateActions?index=equities&from_date=DD-MM-YYYY&to_date=DD-MM-YYYY`.
-History reaches at least 2015 (MyInvestIQ CORPORATE_ACTIONS_FINDINGS.md). Traps: NCRPS "Bonus" subjects are not
-equity; the feed's `isin` is unreliable across splits; store only ex_date < today.
-MyInvestIQ's `corporate_actions` table covered only 2025-08-29..2026-08-25 (100 rows), last fetched 2026-08-28.
+No cookie needed. One call per calendar year is complete (2018 Q1 from a year call = a Q1-only call, 192 records)
+and history reaches 2013 (2026-10-11). strategy-trader holds 2014-01-01..2025-08-25 (`data/corporate_actions/`);
+MyInvestIQ owns 2025-08-26 onward (its `corporate_actions` table, last fetched 2026-08-28 — ST-012 merges it).
+Scope: BONUS `X:Y` → factor (Y+X)/Y; SPLIT face value A→B → A/B; CONSOLIDATION A→B → A/B (<1).
+Traps, each hit for real (2026-10-11 unless noted):
+- **The feed files past actions under the company's CURRENT symbol**; bhavcopy has the symbol in use then
+  (INFIBEAM's 2021 bonus is under CCAVENUE). 55 of 805 actions 2014-2025 needed mapping back (`core/symbol_changes.py`).
+- **Subjects are free text and messy before ~2019:** several actions in one subject ("Bonus 1:1 / Face Value Split
+  From Rs 10/- To Rs 5/-", "... And Face Value Split ..."), "Bonus 1 : 1", "Bonus Issue", "Sub-Division From",
+  "Rs.10/-", "Re.1/-", "To Face Value 2/-". MyInvestIQ's whole-subject regexes miss ~1/3 of 2014's. "Rs 10/-"
+  contains "/", so subjects split into parts only on "/" not followed by "-".
+- **"Bonus" that is not equity:** NCRPS, preference shares, debentures (NTPC 2015, BRITANNIA 2019/2021, TVSMOTOR
+  2025). Excluded by name.
+- **Capital reductions** have no automatic factor — sent to review (5 in 2014-2025, all decided in
+  `config/ca_exceptions.csv`).
+- **The feed can be wrong:** DVL "Bonus 1:2" 2021-08-05 never moved the price (same ISIN) — voided in
+  `config/ca_overrides.csv`.
+- The feed's `isin` is unreliable across splits (MyInvestIQ Q6) — join by symbol. `caBroadcastDate` is always null,
+  so publication timing is unknown — store only ex_date < run date (MyInvestIQ Q7).
+- Legacy bhavcopy PREVCLOSE is RAW on ex-dates (571/575), like UDiFF's — no independent factor from it.
+
+## NSE symbol changes (ST-003; ST-013 builds on it)
+
+`https://nsearchives.nseindia.com/content/equities/symbolchange.csv` — no header; rows are
+`<company, may contain commas>,<old>,<new>,<DD-MON-YYYY>`; from that date the new symbol trades. 1,056 renames,
+2003 onward (2026-10-11), mutual-fund schemes included. **Incomplete:** PHILIPCARB→PCBL (2022-01-13) and
+INTEGRA→ESSENTIA (2022-03-07) are missing — found by the validator (an action never seen in prices + a drop at the
+split ratio) and added to `config/symbol_changes_extra.csv` from bhavcopy first/last dates.
 
 ## Calendar cross-check
 
-yfinance `^NSEI` daily dates — used only to explain 404 weekdays. It lacks some real sessions
+yfinance `^NSEI` daily dates — used to explain 404 weekdays, and `<SYMBOL>.NS` closes (split/bonus-adjusted) for the
+ST-003 spot check (5/5 match). It lacks some real sessions
 (New Year's Day, Muhurat, special sessions, a few random days); NSE's own files are the authority.

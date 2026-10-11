@@ -1,7 +1,7 @@
 # CONFIG.md — environments, paths, shares, settings
 
 Present tense: how things are set up NOW. Update in the same commit as any change.
-Last updated: 2026-10-11 (ST-002)
+Last updated: 2026-10-11 (ST-003)
 
 ## Machines
 
@@ -23,7 +23,8 @@ Last updated: 2026-10-11 (ST-002)
 ├── data/                                git-ignored — ALL strategy-trader data
 │   ├── bhavcopy_legacy/                 NSE legacy CM bhavcopy 2014-01-01..2024-07-05, <YYYY>/cm…bhav.csv.zip + manifest.csv
 │   ├── bhavcopy_udiff/                  NSE+BSE UDiFF 2024-01-03..2025-08-27 + manifest.csv, plus NSE 2025-02-01 (one-time, read-only)
-│   ├── corporate_actions/               (ST-003)
+│   ├── corporate_actions/               ST-003: raw/<YYYY>.json (feed 2014..2025, byte-for-byte) + history.csv
+│   ├── symbol_changes/                  ST-003: symbolchange.csv (NSE snapshot) + symbolchange_<date>.csv (previous)
 │   └── trendlyne/                       (ST-005)
 └── logs/                                git-ignored — fetch/validate logs and issue CSVs
 ```
@@ -63,11 +64,18 @@ Fetchers refuse to write to a `//host/...` path, so Windows can never write into
 | `LEGACY_BHAVCOPY_DIR` | `<repo>/data/bhavcopy_legacy` | default (may be set explicitly) | legacy reader + fetcher |
 | `INDEX_ARCHIVE_DIR` | none | (not yet used) | — |
 | `LOG_DIR` | `<repo>/logs` | default | fetch + validate scripts |
+| `CORPORATE_ACTIONS_DIR` | `<repo>/data/corporate_actions` | default | CA fetcher, `core/corporate_actions.py`, validator |
+| `SYMBOL_CHANGES_DIR` | `<repo>/data/symbol_changes` | default | `fetch_symbol_changes`, `core/symbol_changes.py` |
 | `TRENDLYNE_DROP_DIR`, `KITE_*`, `DB_*`, `TELEGRAM_*`, `ANTHROPIC_API_KEY` | — | not yet set | later STs |
 
 Windows dev reading prod data: set `BHAVCOPY_ARCHIVE_DIR=//100.103.189.15/myinvestiq/data/bhavcopy`,
 `LEGACY_BHAVCOPY_DIR=//100.103.189.15/strategy-trader/data/bhavcopy_legacy`,
 `UDIFF_GAP_DIR=//100.103.189.15/strategy-trader/data/bhavcopy_udiff` (forward slashes — dotenv does not unescape `\`).
+
+## Curated config in git (`config/`)
+
+`ca_overrides.csv`, `symbol_changes_extra.csv`, `ca_exceptions.csv` — see docs/CODE_MAP.md. `.gitignore` ignores
+`*.csv` except `config/*.csv` (2026-10-11: the first commit silently left these out).
 
 ## Database
 

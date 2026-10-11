@@ -18,6 +18,6 @@ Workflow, status values and gates: `CLAUDE.md` → "Change workflow".
 | [ST-010](tech-debt/ST-010.md) | Baseline momentum strategy + quick backtest | High | Not started | 2026-10-08 | strategy | — |
 | [ST-011](tech-debt/ST-011.md) | Telegram proposal and approval flow | High | Not started | 2026-10-08 | notify | — |
 | [ST-012](tech-debt/ST-012.md) | Project database + read-only role on MyInvestIQ DB | Med | Not started | 2026-10-08 | database | includes CA merge + freshness check (from ST-003) |
-| [ST-013](tech-debt/ST-013.md) | Symbol changes: stitch price series across renames | High | Merged to main — awaiting prod deploy | 2026-10-08 | data | Rakesh: prod run (validate_symbol_changes, then re-run CA fetch + validator) |
+| [ST-013](tech-debt/ST-013.md) | Symbol changes: stitch price series across renames | High | Resolved | 2026-10-08 | data | — (prod confirmed 2026-10-11, merge `c8a2c77`) |
 | [ST-014](tech-debt/ST-014.md) | Workflow + docs (MyInvestIQ-style), own prod folder + X: share | High | Resolved | 2026-10-08 | repo | — (prod confirmed 2026-10-11) |
 | [ST-015](tech-debt/ST-015.md) | Housekeeping: .gitattributes, git command conventions, sign-offs | Med | Resolved | 2026-10-11 | repo | — (prod confirmed 2026-10-11, merge `1a66fc2`) |

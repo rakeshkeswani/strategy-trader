@@ -13,7 +13,9 @@ ST-003 acceptance checks for the corporate-actions history (2014-01-01..2025-08-
    to the first close on/after it must be within +/-30% (fail otherwise: wrong or unapplied factor). Every RAW
    one-day move worse than -35% with no stored action between the two closes must be explained: automatically when
    the feed holds any record for that symbol between the two dates (demerger, rights, ...), as a tick move when the
-   previous close is below Rs 1, or by a 'drop' row in config/ca_exceptions.csv. Feed actions are corrected in
+   previous close is below Rs 1, as a suspension gap when the two closes are more than SUSPENSION_GAP_DAYS apart
+   AND the ISIN is unchanged (a changed ISIN across a gap may hide a split, so it is never auto-explained), or by a
+   'drop' row in config/ca_exceptions.csv. Feed actions are corrected in
    config/ca_overrides.csv (VOID/ADD, applied by core.corporate_actions.load_history).
 3. PREVCLOSE PROBE (legacy files only): on an ex_date, is the file's PREVCLOSE the NSE-adjusted previous close?
    Reported as a share of actions; when it is, last close / PREVCLOSE is an independent factor and mismatches
@@ -45,6 +47,7 @@ EXCEPTIONS_FILE = REPO_ROOT / 'config' / 'ca_exceptions.csv'
 ACTION_MOVE_LIMIT = 0.30
 DROP_THRESHOLD = 0.65          # raw close / previous close below this = a drop worse than -35%
 PENNY_PRICE = 1.0              # previous close below Rs 1: a one-tick move can be -50%
+SUSPENSION_GAP_DAYS = 30       # longest normal NSE closure is ~5 days; > 30 calendar days without a close = suspension
 _RIGHTS_ENTITLEMENT = re.compile(r'-RE\d*$')
 PREVCLOSE_TOLERANCE = 0.02
 SPOT_EVENTS = [                 # (symbol, ex_date) -- known events; yfinance closes are split/bonus-adjusted
@@ -240,8 +243,8 @@ def main() -> int:
                                'implied factor (last close / PREVCLOSE) vs stored'])
 
     # 2b. raw drops with no stored action
-    drop = {'raw_drops': len(drops), 'explained_by_feed': 0, 'tick_move': 0, 'explained_by_exception': 0,
-            'unexplained': 0}
+    drop = {'raw_drops': len(drops), 'explained_by_feed': 0, 'tick_move': 0, 'suspension_gap': 0,
+            'explained_by_exception': 0, 'unexplained': 0}
     for m in drops:
         key = ('drop', m['symbol'], m['date'].isoformat())
         feed_hits = [s for d, s in feed_index.get(m['symbol'], ()) if m['prev_date'] < d <= m['date']]
@@ -251,6 +254,9 @@ def main() -> int:
         elif m['prev_close'] < PENNY_PRICE:
             drop['tick_move'] += 1
             kind, why = 'drop_tick', f'previous close below Rs {PENNY_PRICE:g}'
+        elif (m['date'] - m['prev_date']).days > SUSPENSION_GAP_DAYS and not m['isin_changed']:
+            drop['suspension_gap'] += 1
+            kind, why = 'drop_gap', f'no close for {(m["date"] - m["prev_date"]).days} days, ISIN unchanged'
         elif key in exceptions:
             drop['explained_by_exception'] += 1
             kind, why = 'drop_exception', exceptions[key]

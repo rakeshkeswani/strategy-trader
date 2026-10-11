@@ -19,6 +19,8 @@ Traps (each excluded with a named reason, never adjusted):
   - preference shares, NCRPS and debentures wearing a "Bonus" subject are not the equity;
   - "Capital Reduction ... / Consolidation ..." has no safe automatic factor -> REVIEW (manual decision);
   - never join on the feed's `isin` (MyInvestIQ CORPORATE_ACTIONS_FINDINGS Q6) -- join by symbol;
+  - the feed files past actions under the company's CURRENT symbol (2021: INFIBEAM's bonus under CCAVENUE), so
+    each row's `symbol` is the one in use on ex_date (core.symbol_changes); `feed_symbol` keeps what the feed said;
   - only actions with ex_date before the run date are kept (publication timing unknown, Q7).
 
 Any part that mentions bonus / split / sub-division / consolidation and is not parsed, excluded or sent to review
@@ -38,9 +40,11 @@ from datetime import date, datetime
 from pathlib import Path
 
 from core.config import CORPORATE_ACTIONS_DIR
+from core.symbol_changes import symbol_on
 
 ACTION_TYPES = ('BONUS', 'SPLIT', 'CONSOLIDATION')
-HISTORY_FIELDS = ['symbol', 'series', 'ex_date', 'action_type', 'adjustment_factor', 'subject_text', 'isin']
+HISTORY_FIELDS = ['symbol', 'feed_symbol', 'series', 'ex_date', 'action_type', 'adjustment_factor', 'subject_text',
+                  'isin']
 
 _NUM = r'(\d+(?:\.\d+)?)'
 _PART_SEP = re.compile(r'/(?!-)')
@@ -116,17 +120,18 @@ def parse_subject(subject: str) -> SubjectParse:
     return out
 
 
-def classify_records(records: list, as_of: date) -> tuple[list, list, dict]:
+def classify_records(records: list, as_of: date, changes: dict | None = None) -> tuple[list, list, dict]:
     """Turn raw NSE corporate-action records into history rows.
 
-    Rows with the same (symbol, ex_date, action_type) are combined by multiplying factors. Records with
-    ex_date >= `as_of` are not kept (publication timing unknown).
+    Each row's `symbol` is the symbol in use on ex_date when `changes` (core.symbol_changes.load_changes()) is
+    given, else the feed's symbol. Rows with the same (symbol, ex_date, action_type) are combined by multiplying
+    factors. Records with ex_date >= `as_of` are not kept (publication timing unknown).
 
     Returns:
         (rows as dicts with HISTORY_FIELDS, issues as [kind, symbol, ex_date, detail], counts dict)
     """
     counts = {'records': len(records), 'BONUS': 0, 'SPLIT': 0, 'CONSOLIDATION': 0, 'excluded': 0,
-              'review': 0, 'unclassified': 0, 'deferred': 0, 'bad_record': 0}
+              'review': 0, 'unclassified': 0, 'deferred': 0, 'bad_record': 0, 'renamed': 0}
     combined: dict = {}
     issues: list = []
     for rec in records:
@@ -142,6 +147,8 @@ def classify_records(records: list, as_of: date) -> tuple[list, list, dict]:
             counts['bad_record'] += 1
             issues.append(['bad_record', symbol or '', ex_raw or '', subject])
             continue
+        feed_symbol = symbol
+        symbol = symbol_on(changes, feed_symbol, ex_date) if changes else feed_symbol
         for reason, part in parsed.excluded:
             counts['excluded'] += 1
             issues.append(['excluded', symbol, ex_date.isoformat(), f'{reason}: {part}'])
@@ -159,10 +166,11 @@ def classify_records(records: list, as_of: date) -> tuple[list, list, dict]:
             if key in combined:
                 combined[key]['adjustment_factor'] *= factor
             else:
-                combined[key] = {'symbol': symbol, 'series': rec.get('series') or '', 'ex_date': ex_date,
-                                 'action_type': action_type, 'adjustment_factor': factor,
+                combined[key] = {'symbol': symbol, 'feed_symbol': feed_symbol, 'series': rec.get('series') or '',
+                                 'ex_date': ex_date, 'action_type': action_type, 'adjustment_factor': factor,
                                  'subject_text': subject.strip(), 'isin': rec.get('isin') or ''}
                 counts[action_type] += 1
+                counts['renamed'] += symbol != feed_symbol
     rows = sorted(combined.values(), key=lambda r: (r['ex_date'], r['symbol'], r['action_type']))
     return rows, issues, counts
 

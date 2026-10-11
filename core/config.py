@@ -37,3 +37,7 @@ UDIFF_GAP_DIR = _dir_from_env('UDIFF_GAP_DIR', REPO_ROOT / 'data' / 'bhavcopy_ud
 # ST-003: corporate-actions history 2014..2025-08-25 (raw/<YYYY>.json + history.csv), written once by
 # ingestion/fetch_corporate_actions_history.py. Prod: default (<repo>/data/corporate_actions).
 CORPORATE_ACTIONS_DIR = _dir_from_env('CORPORATE_ACTIONS_DIR', REPO_ROOT / 'data' / 'corporate_actions')
+
+# ST-003 (for ST-013 too): NSE symbol-change list snapshot, written by ingestion/fetch_symbol_changes.py.
+# Prod: default (<repo>/data/symbol_changes).
+SYMBOL_CHANGES_DIR = _dir_from_env('SYMBOL_CHANGES_DIR', REPO_ROOT / 'data' / 'symbol_changes')

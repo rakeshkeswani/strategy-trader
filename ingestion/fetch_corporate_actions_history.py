@@ -13,6 +13,9 @@ Writes, under CORPORATE_ACTIONS_DIR (prod: <repo>/data/corporate_actions/):
 and to LOG_DIR: fetch_corporate_actions_history_<date>.log and ..._issues_<date>.csv (excluded / review /
 unclassified items).
 
+Each action is stored under the symbol in use on its ex_date (the feed uses today's symbol): needs the rename
+snapshot from `python -m ingestion.fetch_symbol_changes` first.
+
 Ongoing corporate actions (2025-08-26 onward) are MyInvestIQ's (single source of truth); this script never fetches
 past HISTORY_END. It is not a daily job.
 
@@ -38,6 +41,7 @@ import requests
 
 from core.config import CORPORATE_ACTIONS_DIR, LOG_DIR
 from core.corporate_actions import classify_records, write_history
+from core.symbol_changes import load_changes
 
 logger = logging.getLogger('fetch_corporate_actions_history')
 
@@ -157,6 +161,11 @@ def main() -> int:
         return 2
 
     try:
+        changes = load_changes()
+    except FileNotFoundError as e:
+        logger.critical(f'rename snapshot missing ({e}) -- run python -m ingestion.fetch_symbol_changes first')
+        return 2
+    try:
         by_year = load_or_fetch(years, out_dir / 'raw', args.force)
     except FetchError as e:
         logger.critical(f'fetch failed -- {e}')
@@ -166,15 +175,18 @@ def main() -> int:
     empty_years = []
     for year in years:
         recs = [r for r in by_year[year] if _in_window(r)]
-        rows, _, counts = classify_records(recs, HISTORY_END + timedelta(days=1))
+        rows, _, counts = classify_records(recs, HISTORY_END + timedelta(days=1), changes)
         logger.info(f"{year}: {len(by_year[year])} records, BONUS {counts['BONUS']}, SPLIT {counts['SPLIT']}, "
                     f"CONSOL {counts['CONSOLIDATION']}, excluded {counts['excluded']}, review {counts['review']}, "
-                    f"unclassified {counts['unclassified']}")
+                    f"unclassified {counts['unclassified']}, renamed {counts['renamed']}")
         if not by_year[year]:
             empty_years.append(year)
         records += recs
 
-    rows, issues, counts = classify_records(records, HISTORY_END + timedelta(days=1))
+    rows, issues, counts = classify_records(records, HISTORY_END + timedelta(days=1), changes)
+    for r in rows:
+        if r['symbol'] != r['feed_symbol']:
+            issues.append(['renamed', r['symbol'], r['ex_date'].isoformat(), f"feed symbol {r['feed_symbol']}"])
     write_history(out_dir / 'history.csv', rows)
     issues_path = LOG_DIR / f'fetch_corporate_actions_history_issues_{date.today():%Y%m%d}.csv'
     with issues_path.open('w', newline='', encoding='utf-8') as f:

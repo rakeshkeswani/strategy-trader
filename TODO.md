@@ -1,17 +1,18 @@
 # TODO.md — open items and resume point
 
 Read at session start (after `TECH_DEBT.md` and the tail of `SESSION_LOG.md`). Tick/remove as done.
-Last updated: 2026-10-11 (conversation handover).
+Last updated: 2026-10-11 (ST-001/002/014 resolved; ST-015 finishing).
 
 ## Resume here (new conversation)
-1. **Rakesh: sign-off.** Say "prod confirmed" for ST-001, ST-002, ST-014 → mark Resolved, prod_confirmed 2026-10-08
-   (or the date Rakesh gives), fill `docs_updated`.
+1. ~~Sign-off ST-001, ST-002, ST-014~~ — all Resolved, prod confirmed 2026-10-11.
 2. **ST-015 housekeeping** (branch `st/ST-015-housekeeping`):
+   - [x] status changes from item 1
+   - [x] CLAUDE.md file-reading rules already list `TODO.md`
    - [ ] `.gitattributes` (`* text=auto eol=lf`) and renormalise once — ends CRLF warnings and diff noise
-   - [ ] CLAUDE.md: `git --no-pager` for show/log; merges always `git merge --no-ff <branch> -m "Merge ST-NNN: …"`
-   - [ ] CLAUDE.md file-reading rules: add `TODO.md`
-   - [ ] status changes from item 1
-   - [ ] record the backup setup in `docs/CONFIG.md` once item 3 is verified
+   - [ ] CLAUDE.md: `git --no-pager`; merges with `-m`; `git branch --list` before `switch -c`
+   - [ ] merge, prod pull, prod `git status` clean → Rakesh sign-off
+2a. **Backup record (moved out of ST-015, 2026-10-11):** once item 3 is verified, add the mirror to `docs/CONFIG.md`
+   and note it in the homelab map — under whichever ST is open then.
 3. **Backup (homelab project, not here).** Paste this handover there:
    > Add strategy-trader to the backup chain on RKNeo50Q. Source `/home/rakeshbk/strategy-trader` (code on GitHub;
    > `data/` = one-time NSE downloads 2014–2025, ~300 MB, hard to replace). Exclude `venv/`, `__pycache__/`,

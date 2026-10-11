@@ -35,6 +35,7 @@ ML and code may never change this objective.
 8. **`TECH_DEBT.md` is the canonical issue tracker**
 9. **Understand current design before enhancing** — ask "what exists now?" first
 10. **Review actual changed files, not summaries**
+11. **Every command block starts with WHERE (laptop or prod) and a `cd` to the full path** — never a bare command block (Rakesh, 2026-10-11)
 
 ## Trading Safety Rules (non-negotiable)
 
@@ -91,12 +92,18 @@ Prod repo: `/home/rakeshbk/strategy-trader` (venv: `source venv/bin/activate`). 
 1. **Discuss** the issue; Claude proposes the design. Nothing is coded before Rakesh approves.
 2. **Done when** is written into `tech-debt/ST-NNN.md` before the fix exists — observable behaviour,
    **plus a falsifying clause** (the state that must NOT exist). Assume a count can lie.
-3. **Branch per ST:** Rakesh runs `git switch -c st/ST-NNN-short-name`. Never commit to `main` directly.
+3. **Branch per ST:** Rakesh runs `git branch --list "st/ST-NNN*"` first; if nothing, `git switch -c st/ST-NNN-short-name`,
+   else `git switch` to it. Never commit to `main` directly. Every commit's output must show the expected branch name.
 4. Claude writes code on the branch in the Windows working copy and runs tests.
 5. Claude gives commit commands with **explicit file names** — never `git add .` — then
    `git status` before and `git show HEAD --name-only` after, to confirm exactly what was committed.
 6. Rakesh reviews the changed files (not the summary), merges to `main`, pushes, `git pull` on prod.
 7. Prod verification against Done-when. **Resolved only when Rakesh confirms** and gives a prod_confirmed date.
+
+**Git command conventions:** `git --no-pager` for every `show`, `log` and `diff` (the PowerShell pager cut
+`git show --name-only` output on 2026-10-08). Merges are always
+`git merge --no-ff st/ST-NNN-short-name -m "Merge ST-NNN: <summary>"` so no editor opens. Line endings are LF
+everywhere (`.gitattributes`).
 
 ### Status values (index only — `TECH_DEBT.md` is the single place status lives)
 

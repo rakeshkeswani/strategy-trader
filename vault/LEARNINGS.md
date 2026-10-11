@@ -39,3 +39,17 @@ Verification commands must not page: use `git --no-pager show`. Also `git merge 
 ## 2026-10-08 — backups follow the pool, not the app
 Kopia snapshots only `/mnt/rkfspool/daily`; apps reach it via a nightly mirror (n8n → pg_dump → FFS). A new app
 folder is NOT backed up until something mirrors it there. The homelab project owns that chain.
+
+## 2026-10-11 — a validator PASS that covered half the range
+`validate_legacy_bhavcopy` passed (0 gaps, 0 weekend sessions missing), but its weekend check only looked at the
+legacy archive (2014..Jul 2024). ST-002's Done-when said "any trading day 2014..today", which no script checked.
+Running every yfinance ^NSEI date through `core.prices.read_ohlcv_for_date()` found Saturday 2025-02-01 (Budget
+session) missing from the UDiFF gap set — MyInvestIQ's fetcher skips weekends. **Check the Done-when through the
+same entry point the rest of the code uses, over the whole range it promises.**
+
+## 2026-10-11 — a branch that already existed put a commit on main
+`git switch -c st/ST-015-housekeeping` failed because the branch existed (made and merged at the last session
+close); the next commands ran on `main`. Fixed before push with `git branch -f` + `git reset --keep origin/main`.
+Separately, three uncommitted edits in the Windows working copy reverted to their committed text with no conflict
+copy (cause unknown; OneDrive suspected). **Check the branch name in the output before committing, and confirm
+`git status` lists every file expected before `git add`.**

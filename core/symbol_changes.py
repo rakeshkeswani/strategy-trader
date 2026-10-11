@@ -11,15 +11,20 @@ INFIBEAM -> CCAVENUE 03-FEB-2026, TIDEWATER -> VEEDOL 09-OCT-2024, KARDA -> KBCG
 
 Why it exists: the corporate-actions feed reports a past action under the company's CURRENT symbol, while bhavcopy
 carries the symbol in use on that day. Chains are followed (KARDA -> KBCGLOBAL -> DHARAN).
+
+NSE's list is incomplete (2026-10-11: PHILIPCARB -> PCBL and INTEGRA -> ESSENTIA are missing). Renames found
+missing are added, with their evidence in the company field, to config/symbol_changes_extra.csv (same format, in
+git), which load_changes() merges in.
 """
 
 import csv
 from datetime import date, datetime
 from pathlib import Path
 
-from core.config import SYMBOL_CHANGES_DIR
+from core.config import REPO_ROOT, SYMBOL_CHANGES_DIR
 
 SNAPSHOT_NAME = 'symbolchange.csv'
+EXTRA_FILE = REPO_ROOT / 'config' / 'symbol_changes_extra.csv'
 
 
 def parse_rows(text: str) -> list[tuple[str, str, date]]:
@@ -38,15 +43,18 @@ def parse_rows(text: str) -> list[tuple[str, str, date]]:
     return out
 
 
-def load_changes(path: Path | None = None) -> dict:
-    """Load the snapshot into {new_symbol: [(applicable_from, old_symbol), ...]} newest first.
+def load_changes(path: Path | None = None, extra_path: Path | None = EXTRA_FILE) -> dict:
+    """Load the snapshot plus the curated extras into {new_symbol: [(applicable_from, old_symbol), ...]} newest first.
 
     Raises:
         FileNotFoundError: snapshot missing (run ingestion.fetch_symbol_changes first).
     """
     path = path or (SYMBOL_CHANGES_DIR / SNAPSHOT_NAME)
+    rows = parse_rows(path.read_bytes().decode('latin-1'))
+    if extra_path is not None and extra_path.exists():
+        rows += parse_rows(extra_path.read_text(encoding='utf-8'))
     by_new: dict = {}
-    for old, new, d in parse_rows(path.read_bytes().decode('latin-1')):
+    for old, new, d in set(rows):
         by_new.setdefault(new, []).append((d, old))
     for lst in by_new.values():
         lst.sort(reverse=True)

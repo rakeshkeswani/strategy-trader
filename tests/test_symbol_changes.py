@@ -22,7 +22,17 @@ def _changes(tmp_path):
     """Write the snapshot to a temp file and load it."""
     p = tmp_path / 'symbolchange.csv'
     p.write_bytes(SNAPSHOT.encode('latin-1'))
-    return sc.load_changes(p)
+    return sc.load_changes(p, extra_path=None)
+
+
+def test_curated_extras_are_merged(tmp_path):
+    """Renames missing from NSE's list come from config/symbol_changes_extra.csv."""
+    p = tmp_path / 'symbolchange.csv'
+    p.write_bytes(SNAPSHOT.encode('latin-1'))
+    ch = sc.load_changes(p)   # default extra file = the real config/symbol_changes_extra.csv
+    assert sc.symbol_on(ch, 'PCBL', date(2018, 4, 19)) == 'PHILIPCARB'
+    assert sc.symbol_on(ch, 'ESSENTIA', date(2022, 2, 3)) == 'INTEGRA'
+    assert sc.symbol_on(ch, 'ESSENTIA', date(2022, 3, 7)) == 'ESSENTIA'
 
 
 def test_parse_rows_handles_commas_and_garbage():

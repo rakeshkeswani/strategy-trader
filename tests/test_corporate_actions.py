@@ -101,8 +101,44 @@ def test_same_day_actions_combine(tmp_path):
     rows, _, _ = ca.classify_records(recs, AS_OF)
     path = tmp_path / 'history.csv'
     ca.write_history(path, rows)
-    table = ca.load_history(path)
+    table = ca.load_history(path, tmp_path / 'no_overrides.csv')
     assert table == {'XYZ': [(date(2015, 3, 5), 10.0)]}
+
+
+def _history_with_overrides(tmp_path, override_lines: list) -> tuple:
+    """Write a 2-action history and an overrides file; return (history path, overrides path)."""
+    recs = [{'symbol': 'DVL', 'series': 'EQ', 'exDate': '05-Aug-2021', 'subject': 'Bonus 1:2', 'isin': ''},
+            {'symbol': 'ABC', 'series': 'EQ', 'exDate': '01-Feb-2016', 'subject': 'Bonus 1:1', 'isin': ''}]
+    rows, _, _ = ca.classify_records(recs, AS_OF)
+    hist, ovr = tmp_path / 'history.csv', tmp_path / 'ca_overrides.csv'
+    ca.write_history(hist, rows)
+    ovr.write_text('kind,symbol,ex_date,action_type,adjustment_factor,reason\n' + '\n'.join(override_lines) + '\n',
+                   encoding='utf-8')
+    return hist, ovr
+
+
+def test_overrides_void_and_add(tmp_path):
+    """VOID removes a feed action; ADD supplies a factor the feed lacks."""
+    hist, ovr = _history_with_overrides(tmp_path, [
+        'VOID,DVL,2021-08-05,BONUS,,price never moved',
+        'ADD,XYZ,2018-08-29,CONSOLIDATION,0.33,capital reduction moved the scale',
+    ])
+    table = ca.load_history(hist, ovr)
+    assert 'DVL' not in table
+    assert table['XYZ'] == [(date(2018, 8, 29), 0.33)] and table['ABC'] == [(date(2016, 2, 1), 2.0)]
+
+
+@pytest.mark.parametrize('line', [
+    'VOID,NOPE,2021-08-05,BONUS,,stale override',       # matches nothing -> must not pass silently
+    'ADD,XYZ,2018-08-29,CONSOLIDATION,0,zero factor',
+    'ADD,XYZ,2018-08-29,DEMERGER,0.5,unknown type',
+    'VOID,DVL,2021-08-05,BONUS,,',                     # no reason
+])
+def test_bad_overrides_raise(tmp_path, line):
+    """Malformed or stale override rows stop the load instead of being ignored."""
+    hist, ovr = _history_with_overrides(tmp_path, [line])
+    with pytest.raises(ca.OverrideError):
+        ca.load_history(hist, ovr)
 
 
 def test_adjustment_maths(tmp_path):

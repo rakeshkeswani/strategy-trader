@@ -6,11 +6,15 @@ ST-003 acceptance checks for the corporate-actions history (2014-01-01..2025-08-
 1. FEED: raw/<YYYY>.json present for every year with >= 1 record; re-parsed with core.corporate_actions,
    0 unclassified subjects. REVIEW items (capital reductions) each need a decision row in config/ca_exceptions.csv.
 2. JUMP SCAN: streams every trading day through core.prices (the same entry point the rest of the code uses) and
-   tracks each symbol's last close. For every stored action, the ADJUSTED move from the last close before ex_date
+   tracks each symbol's last close. Equities only: ISIN starting INE (or IN9, DVR shares), symbol not ending
+   -RE / -RE<n> (ETFs/gold units have INF ISINs and their unit splits are not in this feed; rights entitlements
+   collapse by design). Skipped
+   symbols are counted by ISIN prefix so the filter cannot hide anything unexpected. For every stored action, the ADJUSTED move from the last close before ex_date
    to the first close on/after it must be within +/-30% (fail otherwise: wrong or unapplied factor). Every RAW
    one-day move worse than -35% with no stored action between the two closes must be explained: automatically when
-   the feed holds any record for that symbol between the two dates (demerger, rights, ...), or by a 'drop' row in
-   config/ca_exceptions.csv.
+   the feed holds any record for that symbol between the two dates (demerger, rights, ...), as a tick move when the
+   previous close is below Rs 1, or by a 'drop' row in config/ca_exceptions.csv. Feed actions are corrected in
+   config/ca_overrides.csv (VOID/ADD, applied by core.corporate_actions.load_history).
 3. PREVCLOSE PROBE (legacy files only): on an ex_date, is the file's PREVCLOSE the NSE-adjusted previous close?
    Reported as a share of actions; when it is, last close / PREVCLOSE is an independent factor and mismatches
    > 2% are listed.
@@ -25,12 +29,13 @@ import argparse
 import csv
 import json
 import logging
+import re
 import sys
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
 from core.config import CORPORATE_ACTIONS_DIR, LOG_DIR, REPO_ROOT
-from core.corporate_actions import classify_records, cumulative_factor, load_history
+from core.corporate_actions import classify_records, cumulative_factor, load_history, load_overrides
 from core.prices import BhavcopyDateMissingError, read_ohlcv_for_date
 from core.symbol_changes import load_changes, symbol_on
 from ingestion.fetch_corporate_actions_history import HISTORY_END, HISTORY_START
@@ -39,6 +44,8 @@ logger = logging.getLogger('validate_corporate_actions')
 EXCEPTIONS_FILE = REPO_ROOT / 'config' / 'ca_exceptions.csv'
 ACTION_MOVE_LIMIT = 0.30
 DROP_THRESHOLD = 0.65          # raw close / previous close below this = a drop worse than -35%
+PENNY_PRICE = 1.0              # previous close below Rs 1: a one-tick move can be -50%
+_RIGHTS_ENTITLEMENT = re.compile(r'-RE\d*$')
 PREVCLOSE_TOLERANCE = 0.02
 SPOT_EVENTS = [                 # (symbol, ex_date) -- known events; yfinance closes are split/bonus-adjusted
     ('AJANTPHARM', date(2015, 3, 20)), ('SRF', date(2021, 10, 13)), ('NYKAA', date(2022, 11, 10)),
@@ -87,11 +94,25 @@ def check_feed(raw_dir: Path, issues: list, changes: dict) -> tuple[dict, dict]:
     return summary, index
 
 
-def scan_prices(table: dict, start: date, end: date) -> tuple[dict, list, int]:
-    """Stream every trading day; return (action moves {(symbol, ex_date): row}, raw drops [row], trading days)."""
+def is_equity(symbol: str, isin: str | None) -> bool:
+    """True for a listed equity: ISIN starting INE or IN9 (DVR), and not a -RE/-RE<n> rights entitlement."""
+    return bool(isin) and isin[:3] in ('INE', 'IN9') and not _RIGHTS_ENTITLEMENT.search(symbol)
+
+
+def scan_prices(table: dict, start: date, end: date, watch: set | None = None) -> tuple[dict, list, int, dict]:
+    """Stream every trading day over equities.
+
+    `watch` is a set of (symbol, date) whose first move on/after that date is recorded even with no stored action
+    (capital reductions under review). Returns (moves {(symbol, ex_date): row} for stored actions and watched
+    items, raw drops [row], trading days, skipped {isin prefix: symbols}).
+    """
     last: dict = {}
     moves: dict = {}
     drops: list = []
+    skipped: dict = {}
+    watch_by_symbol: dict = {}
+    for s, wd in watch or ():
+        watch_by_symbol.setdefault(s, []).append(wd)
     days = 0
     d = start
     while d <= end:
@@ -104,25 +125,33 @@ def scan_prices(table: dict, start: date, end: date) -> tuple[dict, list, int]:
         if days % 250 == 0:
             logger.info(f'scanned {days} trading days (to {d})')
         for symbol, rec in day.items():
+            if not is_equity(symbol, rec.get('isin')):
+                prefix = 'RE' if _RIGHTS_ENTITLEMENT.search(symbol) else (rec.get('isin') or 'NONE')[:3]
+                skipped.setdefault(prefix, set()).add(symbol)
+                continue
             close = rec.get('close')
             if not close:
                 continue
             if symbol in last:
-                prev_date, prev_close = last[symbol]
+                prev_date, prev_close, prev_isin = last[symbol]
                 raw = close / prev_close
                 factor = cumulative_factor(table, symbol, prev_date, d)
                 row = {'symbol': symbol, 'prev_date': prev_date, 'prev_close': prev_close, 'date': d,
                        'close': close, 'raw': raw, 'factor': factor, 'adj': raw * factor,
-                       'prevclose_field': rec.get('prev_close'), 'source': rec.get('source')}
+                       'prevclose_field': rec.get('prev_close'), 'source': rec.get('source'),
+                       'isin_changed': prev_isin != rec.get('isin')}
                 if factor != 1.0:
                     for ex_date, _ in table.get(symbol, ()):
                         if prev_date < ex_date <= d:
                             moves[(symbol, ex_date)] = row
                 elif raw < DROP_THRESHOLD:
                     drops.append(row)
-            last[symbol] = (d, close)
+                for wd in watch_by_symbol.get(symbol, ()):
+                    if prev_date < wd <= d:
+                        moves[(symbol, wd)] = row
+            last[symbol] = (d, close, rec.get('isin'))
         d += timedelta(days=1)
-    return moves, drops, days
+    return moves, drops, days, skipped
 
 
 def spot_check(table: dict, moves: dict, issues: list) -> dict:
@@ -174,16 +203,22 @@ def main() -> int:
     table = load_history(CORPORATE_ACTIONS_DIR / 'history.csv')
     stored = [(s, ex) for s, lst in table.items() for ex, _ in lst if args.start <= ex <= args.end]
 
-    moves, drops, days = scan_prices(table, args.start, args.end)
+    watch = {(i[1], date.fromisoformat(i[2])) for i in issues if i[0] == 'feed_review'}
+    moves, drops, days, skipped = scan_prices(table, args.start, args.end, watch)
 
     # 2a. every stored action's adjusted move
     act = {'actions_in_range': len(stored), 'observed': 0, 'not_observed': 0, 'outside_limit': 0}
     probe = {'legacy_checked': 0, 'prevclose_adjusted': 0, 'prevclose_raw': 0, 'factor_mismatch': 0}
     for symbol, ex_date in stored:
         m = moves.get((symbol, ex_date))
+        key = ('not_observed', symbol, ex_date.isoformat())
         if m is None:
             act['not_observed'] += 1
-            issues.append(['action_not_observed', symbol, ex_date.isoformat(), '', '', '', 'symbol not traded around ex_date'])
+            reason = exceptions.get(key, '')
+            issues.append(['action_not_observed', symbol, ex_date.isoformat(), '', '', '',
+                           reason or 'symbol not traded around ex_date (missed rename?)'])
+            if not reason:
+                act['not_observed_unexplained'] = act.get('not_observed_unexplained', 0) + 1
             continue
         act['observed'] += 1
         if abs(m['adj'] - 1) > ACTION_MOVE_LIMIT:
@@ -205,27 +240,44 @@ def main() -> int:
                                'implied factor (last close / PREVCLOSE) vs stored'])
 
     # 2b. raw drops with no stored action
-    drop = {'raw_drops': len(drops), 'explained_by_feed': 0, 'explained_by_exception': 0, 'unexplained': 0}
+    drop = {'raw_drops': len(drops), 'explained_by_feed': 0, 'tick_move': 0, 'explained_by_exception': 0,
+            'unexplained': 0}
     for m in drops:
         key = ('drop', m['symbol'], m['date'].isoformat())
         feed_hits = [s for d, s in feed_index.get(m['symbol'], ()) if m['prev_date'] < d <= m['date']]
         if feed_hits:
             drop['explained_by_feed'] += 1
             kind, why = 'drop_feed', '; '.join(feed_hits)[:200]
+        elif m['prev_close'] < PENNY_PRICE:
+            drop['tick_move'] += 1
+            kind, why = 'drop_tick', f'previous close below Rs {PENNY_PRICE:g}'
         elif key in exceptions:
             drop['explained_by_exception'] += 1
             kind, why = 'drop_exception', exceptions[key]
         else:
             drop['unexplained'] += 1
             kind, why = 'drop_unexplained', ''
-        issues.append([kind, m['symbol'], m['date'].isoformat(), f"{m['raw']:.4f}", '', '',
+        isin_note = 'ISIN CHANGED' if m['isin_changed'] else 'ISIN same'
+        issues.append([kind, m['symbol'], m['date'].isoformat(), f"{m['raw']:.4f}", isin_note,
+                       f"{(m['date'] - m['prev_date']).days}d",
                        f"{m['prev_date']} {m['prev_close']} -> {m['date']} {m['close']} {why}".strip()])
 
-    # 1b. review items need a decision
-    review_open = [i for i in issues if i[0] == 'feed_review' and ('review', i[1], i[2]) not in exceptions]
+    # 1b. review items need a decision: an ADD override, or a 'review' row in ca_exceptions.csv (no scale change)
+    added = {(o['symbol'], o['ex_date'].isoformat()) for o in load_overrides() if o['kind'] == 'ADD'}
+    review_open = [i for i in issues if i[0] == 'feed_review'
+                   and ('review', i[1], i[2]) not in exceptions and (i[1], i[2]) not in added]
+    for i in issues:
+        if i[0] == 'feed_review':
+            m = moves.get((i[1], date.fromisoformat(i[2])))
+            i[3] = (f"raw {m['raw']:.4f} ({m['prev_date']} {m['prev_close']} -> {m['date']} {m['close']}, "
+                    f"{'ISIN CHANGED' if m['isin_changed'] else 'ISIN same'})") if m else 'not traded around date'
     spot = {} if args.skip_spot else spot_check(table, moves, issues)
 
-    logger.info(f'SCAN: {days} trading days {args.start}..{args.end}')
+    logger.info(f'SCAN: {days} trading days {args.start}..{args.end}; skipped non-equity symbols by ISIN prefix: '
+                f'{ {k: len(v) for k, v in sorted(skipped.items())} }')
+    odd = {k: sorted(v)[:15] for k, v in skipped.items() if k not in ('INF', 'RE')}
+    if odd:
+        logger.warning(f'skipped symbols with unexpected ISIN prefixes (check these): {odd}')
     logger.info(f'ACTIONS: {act}')
     logger.info(f'PREVCLOSE PROBE: {probe}')
     logger.info(f'DROPS: {drop}')
@@ -245,6 +297,8 @@ def main() -> int:
         failed.append('years missing/empty')
     if feed['unclassified']:
         failed.append('unclassified subjects')
+    if act.get('not_observed_unexplained'):
+        failed.append(f"{act['not_observed_unexplained']} stored actions never observed (missed rename?)")
     if act['outside_limit']:
         failed.append(f"{act['outside_limit']} actions outside +/-{ACTION_MOVE_LIMIT:.0%}")
     if drop['unexplained']:

@@ -39,12 +39,21 @@ from dataclasses import dataclass, field
 from datetime import date, datetime
 from pathlib import Path
 
-from core.config import CORPORATE_ACTIONS_DIR
+from core.config import CORPORATE_ACTIONS_DIR, REPO_ROOT
 from core.symbol_changes import symbol_on
 
 ACTION_TYPES = ('BONUS', 'SPLIT', 'CONSOLIDATION')
 HISTORY_FIELDS = ['symbol', 'feed_symbol', 'series', 'ex_date', 'action_type', 'adjustment_factor', 'subject_text',
                   'isin']
+
+# Curated, reviewed corrections to the feed (in git). VOID removes a feed action that did not change the equity
+# scale; ADD supplies a factor the feed lacks (e.g. a capital reduction that did change it). Every row has a reason
+# with its evidence. Columns: kind, symbol, ex_date, action_type, adjustment_factor, reason.
+OVERRIDES_FILE = REPO_ROOT / 'config' / 'ca_overrides.csv'
+
+
+class OverrideError(ValueError):
+    """A ca_overrides.csv row is malformed or a VOID matches no stored action."""
 
 _NUM = r'(\d+(?:\.\d+)?)'
 _PART_SEP = re.compile(r'/(?!-)')
@@ -187,20 +196,55 @@ def write_history(path: Path, rows: list) -> None:
     tmp.replace(path)
 
 
-def load_history(path: Path | None = None) -> dict:
-    """Load history.csv into {symbol: [(ex_date, combined_factor), ...]} sorted by ex_date.
+def load_overrides(path: Path | None = None) -> list[dict]:
+    """Load ca_overrides.csv rows (empty list when the file is absent).
+
+    Raises:
+        OverrideError: unknown kind or action_type, non-positive factor, or a missing reason.
+    """
+    path = path or OVERRIDES_FILE
+    if not path.exists():
+        return []
+    rows = []
+    with path.open(newline='', encoding='utf-8') as f:
+        for r in csv.DictReader(f):
+            kind, action = (r.get('kind') or '').strip().upper(), (r.get('action_type') or '').strip().upper()
+            if kind not in ('VOID', 'ADD') or action not in ACTION_TYPES or not (r.get('reason') or '').strip():
+                raise OverrideError(f'bad override row: {r}')
+            factor = float(r['adjustment_factor']) if kind == 'ADD' else None
+            if factor is not None and factor <= 0:
+                raise OverrideError(f'factor must be > 0: {r}')
+            rows.append({'kind': kind, 'symbol': r['symbol'].strip(), 'ex_date': date.fromisoformat(r['ex_date']),
+                         'action_type': action, 'adjustment_factor': factor, 'reason': r['reason'].strip()})
+    return rows
+
+
+def load_history(path: Path | None = None, overrides_path: Path | None = None) -> dict:
+    """Load history.csv, apply config/ca_overrides.csv, return {symbol: [(ex_date, combined_factor), ...]}.
 
     Factors of different action types on the same (symbol, ex_date) are multiplied.
 
     Raises:
         FileNotFoundError: history.csv missing (run ingestion.fetch_corporate_actions_history first).
+        OverrideError: a VOID row matches nothing in history.csv (a stale override must not pass silently).
     """
     path = path or (CORPORATE_ACTIONS_DIR / 'history.csv')
-    by_key: dict = {}
+    actions: dict = {}
     with path.open(newline='', encoding='utf-8') as f:
         for r in csv.DictReader(f):
-            key = (r['symbol'], date.fromisoformat(r['ex_date']))
-            by_key[key] = by_key.get(key, 1.0) * float(r['adjustment_factor'])
+            key = (r['symbol'], date.fromisoformat(r['ex_date']), r['action_type'])
+            actions[key] = actions.get(key, 1.0) * float(r['adjustment_factor'])
+    for o in load_overrides(overrides_path):
+        key = (o['symbol'], o['ex_date'], o['action_type'])
+        if o['kind'] == 'VOID':
+            if key not in actions:
+                raise OverrideError(f'VOID matches no stored action: {key}')
+            del actions[key]
+        else:
+            actions[key] = o['adjustment_factor']
+    by_key: dict = {}
+    for (symbol, ex_date, _), factor in actions.items():
+        by_key[(symbol, ex_date)] = by_key.get((symbol, ex_date), 1.0) * factor
     table: dict = {}
     for (symbol, ex_date), factor in sorted(by_key.items(), key=lambda kv: kv[0][1]):
         table.setdefault(symbol, []).append((ex_date, factor))

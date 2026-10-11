@@ -19,4 +19,5 @@ Workflow, status values and gates: `CLAUDE.md` → "Change workflow".
 | [ST-011](tech-debt/ST-011.md) | Telegram proposal and approval flow | High | Not started | 2026-10-08 | notify | — |
 | [ST-012](tech-debt/ST-012.md) | Project database + read-only role on MyInvestIQ DB | Med | Not started | 2026-10-08 | database | — |
 | [ST-013](tech-debt/ST-013.md) | Symbol changes (stitch renames via ISIN) | High | Not started | 2026-10-08 | data | before ST-004 |
-| [ST-014](tech-debt/ST-014.md) | Workflow + docs (MyInvestIQ-style), own prod folder + X: share | High | In progress — branch st/ST-014-workflow-docs | 2026-10-08 | repo | Rakesh: review branch |
+| [ST-014](tech-debt/ST-014.md) | Workflow + docs (MyInvestIQ-style), own prod folder + X: share | High | Moved to Prod — pending verification | 2026-10-08 | repo | Rakesh: prod sign-off (merged `2869ebb`, fail-check passed) |
+| [ST-015](tech-debt/ST-015.md) | Housekeeping: .gitattributes, git command conventions, sign-offs, backup record | Med | Not started | 2026-10-11 | repo | see TODO.md |

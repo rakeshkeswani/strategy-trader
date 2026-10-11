@@ -35,6 +35,7 @@ ML and code may never change this objective.
 8. **`TECH_DEBT.md` is the canonical issue tracker**
 9. **Understand current design before enhancing** — ask "what exists now?" first
 10. **Review actual changed files, not summaries**
+11. **Every command block starts with WHERE (laptop or prod) and a `cd` to the full path** — never a bare command block (Rakesh, 2026-10-11)
 
 ## Trading Safety Rules (non-negotiable)
 

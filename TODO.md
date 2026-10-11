@@ -1,16 +1,20 @@
 # TODO.md — open items and resume point
 
 Read at session start (after `TECH_DEBT.md` and the tail of `SESSION_LOG.md`). Tick/remove as done.
-Last updated: 2026-10-11 (ST-001/002/014 resolved; ST-015 finishing).
+Last updated: 2026-10-11 evening (session close: ST-001/002/003/013/014/015 resolved; ST-004 waiting on the data model).
 
 ## Resume here (new conversation)
-1. ~~Sign-off ST-001, ST-002, ST-014~~ — all Resolved, prod confirmed 2026-10-11.
-2. **ST-015 housekeeping** (branch `st/ST-015-housekeeping`):
-   - [x] status changes from item 1
-   - [x] CLAUDE.md file-reading rules already list `TODO.md`
-   - [ ] `.gitattributes` (`* text=auto eol=lf`) and renormalise once — ends CRLF warnings and diff noise
-   - [ ] CLAUDE.md: `git --no-pager`; merges with `-m`; `git branch --list` before `switch -c`
-   - [ ] merge, prod pull, prod `git status` clean → Rakesh sign-off
+1. **Rakesh: review and approve `docs/DATA_MODEL.md`** (proposal, commit `fa316fb`). Two stores (research files /
+   operational Postgres), shared identifiers (company_key, series_id, symbol, isin, trade_date), research file
+   schemas, 12 Postgres tables. ST-004 code waits on it.
+2. **ST-004 point-in-time universe** — branch `st/ST-004-universe` (open). Design in `tech-debt/ST-004.md` (Nifty 500
+   review alignment: cut-off last trading day Jan/Jul, 6 months, >= 90% trading days, effective April/October;
+   rank by median traded value; overlap threshold agreed after measuring). First step: `ingestion/build_price_panel.py`
+   (Parquet). pyarrow 26.0.0 installed on prod venv and laptop (2026-10-11); pandas 3.0.6 prod / 3.0.1 laptop.
+   Uncommitted on the branch: `requirements.txt` (+pandas, +pyarrow) — commit with the panel builder.
+3. Then ST-010 (baseline momentum backtest) → ST-012 (database; before any execution issue) → ST-006/007/008/009/011.
+4. Prod SSH paste glitch: `^[[200~` breaks the first/last pasted line. Fix once on prod:
+   `echo 'set enable-bracketed-paste off' >> ~/.inputrc` (new session), or update PuTTY.
 2a. ~~Backup record~~ — recorded in `docs/CONFIG.md` "Backup" 2026-10-11 (homelab verified 8 checks).
    Done 2026-10-11: `.env` excluded and mirrored copy removed; freshness check 4 in `homelab-health.sh`; mirror
    complete. **Still open (homelab owns, 2026-10-12):** Kopia 01:00 snapshot contains all four data folders and a
@@ -25,10 +29,8 @@ Last updated: 2026-10-11 (ST-001/002/014 resolved; ST-015 finishing).
    > plan to exclude `.env` from the mirror and back it up another way. Add a daily freshness check for the mirror
    > to `homelab-health.sh`. The map already has the strategy-trader service and a "NOT YET IN THE BACKUP CHAIN"
    > note (`patch_2026_10_08.py`); update backup line, schedules, pool folders once verified.
-4. **ST-003 corporate actions — final design**, then branch `st/ST-003-corporate-actions`. Agreed so far is in
-   `tech-debt/ST-003.md` (MyInvestIQ owns ongoing CA; strategy-trader fetches 2014..2025-08 history once into
-   `data/corporate_actions/`; merge, MyInvestIQ wins; read-only DB role; jump scan / PREVCLOSE / yfinance checks).
-5. Then ST-013 (symbol changes via ISIN) → ST-004 (point-in-time top 500) → ST-010 (baseline momentum backtest).
+Done 2026-10-11: ST-015 (merge `1a66fc2`), ST-003 corporate actions (merge `bf2f689`), ST-013 rename stitching
+(merge `c8a2c77`) — all prod confirmed.
 
 ## Rakesh — outside this repo
 - [x] MyInvestIQ prod includes `98255d6` (prod HEAD `47c82fb`, pulled 2026-10-10)

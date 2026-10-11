@@ -31,3 +31,21 @@
 - Status at close: ST-001, ST-002, ST-014 Moved to Prod — pending verification (await Rakesh "prod confirmed");
   ST-003 Design proposed; ST-015 Not started. Open items: `TODO.md`.
 - Conversation moved: this chat is kept for learning; work resumes in a new conversation from `TODO.md`.
+
+## 2026-10-11 — ST-001/002/014/015 closed; ST-003 and ST-013 built and closed; ST-004 designed
+- Sign-offs (prod confirmed 2026-10-11): ST-001, ST-002 (2025-02-01 Budget Saturday fetched; full-range check
+  `missing 0`), ST-014, ST-015 (merge `1a66fc2`: .gitattributes LF, git conventions, rule 11 = every command block
+  says laptop/prod + full path).
+- ST-003 corporate actions 2014..2025-08-25 (merge `bf2f689`): multi-part subject parser, 805 actions, 55 mapped to
+  the symbol in use on the ex-date (feed uses today's symbol), DVL voided, 6 news-confirmed crashes, 5 capital
+  reductions decided, automatic suspension-gap rule; validator PASS on prod (763/763, spot 5/5).
+- ST-013 rename stitching (merge `c8a2c77`): `core/securities.py` (company key = today's symbol), rename validator;
+  8 renames missing from NSE's list now in `config/symbol_changes_extra.csv`; 282 confirmed, PASS on prod.
+- Backup: homelab added FFS Job 3 + Kopia + freshness check; `.env` excluded. Recorded in `docs/CONFIG.md`.
+  Open (homelab, 2026-10-12): Kopia snapshot with all data folders + `history.csv` restore.
+- MyInvestIQ: TD-251 raised (daily CA fetch + backfill from 2025-08-26); TD-247 lint fixed; prod has `98255d6`.
+- Slips: a commit landed on main (branch already existed) — moved with `git branch -f` + `reset --keep`;
+  `config/*.csv` silently ignored by `*.csv` — fixed in `.gitignore`. Both in `vault/LEARNINGS.md` / CONFIG.md.
+- Decided: universe aligned to Nifty 500 semi-annual review; research data in files (Parquet), operational data in
+  Postgres; DB (ST-012) after ST-010, before execution. `docs/DATA_MODEL.md` proposed (`fa316fb`), awaiting approval.
+- Status at close: ST-004 Design proposed on `st/ST-004-universe` (uncommitted `requirements.txt`). Resume: `TODO.md`.

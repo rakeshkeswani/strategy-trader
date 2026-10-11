@@ -140,7 +140,7 @@ paths, env vars, shares, servers, schedules, one-off ops → `docs/CONFIG.md` | 
 
 ## Session rituals
 
-**Start:** read `TECH_DEBT.md` (fresh) and the tail of `SESSION_LOG.md`; `git status` + current branch on Windows;
+**Start:** read `TECH_DEBT.md` (fresh), the tail of `SESSION_LOG.md` and `TODO.md`; `git status` + current branch on Windows;
 on prod, `ls ~/strategy-trader/logs | tail` for the latest run; state current priorities.
 
 **Close:**
@@ -156,6 +156,7 @@ on prod, `ls ~/strategy-trader/logs | tail` for the latest run; state current pr
 |---|---|
 | `TECH_DEBT.md` | always read fresh — never from memory |
 | `SESSION_LOG.md` | read the tail at session start |
+| `TODO.md` | read at session start — resume point and open items |
 | `docs/CONFIG.md` | read before giving any path, env var or prod command |
 | `docs/DATA_SOURCES.md` | read before touching ingestion or readers |
 | MyInvestIQ repo | read-only reference; changes there go through MyInvestIQ's own process |

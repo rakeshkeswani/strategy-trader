@@ -31,3 +31,11 @@ comparison rejected a good file. Dates are now parsed and compared as dates.
 ## 2026-10-08 — process slips in the first session
 Commits went straight to `main` and used `git add .`, against MyInvestIQ's practice. ST-002's Done-when had no
 falsifying clause. Corrected under ST-014: branch per ST, explicit file staging, Done-when with a fail condition.
+
+## 2026-10-08 — a commit check that looked like a missing-files bug
+`git show HEAD --name-only` in PowerShell listed 22 of 27 files: the pager cut the output. The commit was complete.
+Verification commands must not page: use `git --no-pager show`. Also `git merge --no-ff` without `-m` opens vim.
+
+## 2026-10-08 — backups follow the pool, not the app
+Kopia snapshots only `/mnt/rkfspool/daily`; apps reach it via a nightly mirror (n8n → pg_dump → FFS). A new app
+folder is NOT backed up until something mirrors it there. The homelab project owns that chain.

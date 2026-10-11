@@ -11,11 +11,14 @@ Last updated: 2026-10-11 (ST-001/002/014 resolved; ST-015 finishing).
    - [ ] `.gitattributes` (`* text=auto eol=lf`) and renormalise once — ends CRLF warnings and diff noise
    - [ ] CLAUDE.md: `git --no-pager`; merges with `-m`; `git branch --list` before `switch -c`
    - [ ] merge, prod pull, prod `git status` clean → Rakesh sign-off
-2a. **Backup record (moved out of ST-015, 2026-10-11):** once item 3 is verified, add the mirror to `docs/CONFIG.md`
-   and note it in the homelab map — under whichever ST is open then.
-3. **Backup (homelab project, not here).** Paste this handover there:
+2a. ~~Backup record~~ — recorded in `docs/CONFIG.md` "Backup" 2026-10-11 (homelab verified 8 checks).
+   Done 2026-10-11: `.env` excluded and mirrored copy removed; freshness check 4 in `homelab-health.sh`; mirror
+   complete. **Still open (homelab owns, 2026-10-12):** Kopia 01:00 snapshot contains all four data folders and a
+   `history.csv` restore matches SHA-256. Record the result in CONFIG.md "Backup" when Rakesh reports it.
+3. ~~Backup (homelab project)~~ — done 2026-10-11 (FFS Job 3). Original handover kept for reference:
    > Add strategy-trader to the backup chain on RKNeo50Q. Source `/home/rakeshbk/strategy-trader` (code on GitHub;
-   > `data/` = one-time NSE downloads 2014–2025, ~300 MB, hard to replace). Exclude `venv/`, `__pycache__/`,
+   > `data/` = one-time NSE downloads 2014–2025, ~300 MB, hard to replace; since 2026-10-11 also
+   > `data/corporate_actions/` and `data/symbol_changes/`, small and re-fetchable). Exclude `venv/`, `__pycache__/`,
    > `.pytest_cache/`. Destination `/mnt/rkfspool/daily/rkneo50q/strategy-trader/` so the 01:00 Kopia snapshot
    > covers it. Suggested trigger: existing 23:30 n8n workflow after FFS Job 2 (FFS Job 3 or rsync — homelab's
    > call). Caution: `/mnt/rkfspool/daily` is the read-write rkfspool share; `.env` will later hold Kite keys —
@@ -28,11 +31,12 @@ Last updated: 2026-10-11 (ST-001/002/014 resolved; ST-015 finishing).
 5. Then ST-013 (symbol changes via ISIN) → ST-004 (point-in-time top 500) → ST-010 (baseline momentum backtest).
 
 ## Rakesh — outside this repo
-- [ ] `cd ~/myinvestiq && git pull` on prod (picks up `98255d6`) if not done
-- [ ] MyInvestIQ TD: daily corporate-actions fetch in the 18:00 job + backfill its table from 2025-08-26
-      (its table stopped at 2025-08-29..2026-08-25, last fetched 2026-08-28 — splits since then are unadjusted
-      in MyInvestIQ too)
-- [ ] MyInvestIQ: TD-247 lint ERROR (status Open but merged) blocks commits — fix status or confirm the lint misread
+- [x] MyInvestIQ prod includes `98255d6` (prod HEAD `47c82fb`, pulled 2026-10-10)
+- [ ] **MyInvestIQ TD-251 (High, raised 2026-10-11):** daily corporate-actions fetch + backfill from 2025-08-26.
+      Their table today: 100 rows, ex_date 2025-08-29..2026-08-25, last fetched 2026-08-28, so **2025-08-26..28 is in
+      neither source** until TD-251's backfill. Our history findings are recorded there as design inputs.
+      ST-012 depends on it (merge + freshness check).
+- [x] MyInvestIQ TD-247 lint: fixed 2026-10-09; lint on main 0 errors, `--no-verify` no longer needed
 - [ ] Optional: `sudo apt install tmux` on rkneo50q; tablet SSH = Tailscale app + Termius/JuiceSSH to
       `100.103.189.15:22` as rakeshbk
 - [ ] Optional: `git config --global core.editor notepad`
@@ -43,7 +47,9 @@ Last updated: 2026-10-11 (ST-001/002/014 resolved; ST-015 finishing).
   Rakesh 2026-10-11: the final system must handle these -- e.g. gap-down / circuit handling for GTT stops, and
   news checks before buys.
 - ST-004: EASTSILK (and any symbol with a capital reduction during a suspension) has an incomparable price series
-  across the gap; universe filters keep penny stocks out anyway.
+  across the gap; universe filters keep penny stocks out anyway. ST-013 found the same for post-insolvency relistings
+  (INDOSOLAR->WAAREEINDO, SPENTEX->CLCIND, NTL->NEUEON): start a new series at a run gap > 30 days with an ISIN change.
+  Identities come from `core/securities.py` (key = today's symbol).
 - ST-005 (Trendlyne): the `[strategy-trader]` Samba share is read-only (Samba default), so the weekly drop needs a
   writable path — e.g. a folder on the rkfspool share (Y:) that the importer reads.
 - ST-006 (Kite): keys in `.env` → exclude `.env` from the backup mirror (see backup handover).

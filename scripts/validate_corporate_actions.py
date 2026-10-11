@@ -31,7 +31,6 @@ import argparse
 import csv
 import json
 import logging
-import re
 import sys
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -39,6 +38,7 @@ from pathlib import Path
 from core.config import CORPORATE_ACTIONS_DIR, LOG_DIR, REPO_ROOT
 from core.corporate_actions import classify_records, cumulative_factor, load_history, load_overrides
 from core.prices import BhavcopyDateMissingError, read_ohlcv_for_date
+from core.securities import RIGHTS_ENTITLEMENT, is_equity
 from core.symbol_changes import load_changes, symbol_on
 from ingestion.fetch_corporate_actions_history import HISTORY_END, HISTORY_START
 
@@ -48,7 +48,6 @@ ACTION_MOVE_LIMIT = 0.30
 DROP_THRESHOLD = 0.65          # raw close / previous close below this = a drop worse than -35%
 PENNY_PRICE = 1.0              # previous close below Rs 1: a one-tick move can be -50%
 SUSPENSION_GAP_DAYS = 30       # longest normal NSE closure is ~5 days; > 30 calendar days without a close = suspension
-_RIGHTS_ENTITLEMENT = re.compile(r'-RE\d*$')
 PREVCLOSE_TOLERANCE = 0.02
 SPOT_EVENTS = [                 # (symbol, ex_date) -- known events; yfinance closes are split/bonus-adjusted
     ('AJANTPHARM', date(2015, 3, 20)), ('SRF', date(2021, 10, 13)), ('NYKAA', date(2022, 11, 10)),
@@ -97,11 +96,6 @@ def check_feed(raw_dir: Path, issues: list, changes: dict) -> tuple[dict, dict]:
     return summary, index
 
 
-def is_equity(symbol: str, isin: str | None) -> bool:
-    """True for a listed equity: ISIN starting INE or IN9 (DVR), and not a -RE/-RE<n> rights entitlement."""
-    return bool(isin) and isin[:3] in ('INE', 'IN9') and not _RIGHTS_ENTITLEMENT.search(symbol)
-
-
 def scan_prices(table: dict, start: date, end: date, watch: set | None = None) -> tuple[dict, list, int, dict]:
     """Stream every trading day over equities.
 
@@ -129,7 +123,7 @@ def scan_prices(table: dict, start: date, end: date, watch: set | None = None) -
             logger.info(f'scanned {days} trading days (to {d})')
         for symbol, rec in day.items():
             if not is_equity(symbol, rec.get('isin')):
-                prefix = 'RE' if _RIGHTS_ENTITLEMENT.search(symbol) else (rec.get('isin') or 'NONE')[:3]
+                prefix = 'RE' if RIGHTS_ENTITLEMENT.search(symbol) else (rec.get('isin') or 'NONE')[:3]
                 skipped.setdefault(prefix, set()).add(symbol)
                 continue
             close = rec.get('close')

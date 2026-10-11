@@ -63,9 +63,17 @@ Traps, each hit for real (2026-10-11 unless noted):
 
 `https://nsearchives.nseindia.com/content/equities/symbolchange.csv` — no header; rows are
 `<company, may contain commas>,<old>,<new>,<DD-MON-YYYY>`; from that date the new symbol trades. 1,056 renames,
-2003 onward (2026-10-11), mutual-fund schemes included. **Incomplete:** PHILIPCARB→PCBL (2022-01-13) and
-INTEGRA→ESSENTIA (2022-03-07) are missing — found by the validator (an action never seen in prices + a drop at the
-split ratio) and added to `config/symbol_changes_extra.csv` from bhavcopy first/last dates.
+2003 onward (2026-10-11), mutual-fund schemes included. Proved against prices by `scripts/validate_symbol_changes.py`
+(2014..2026-10-09: 282 renames confirmed, 0 stitches beyond ±30%).
+- **Incomplete — 8 real renames missing, all early 2022:** PHILIPCARB→PCBL, INTEGRA→ESSENTIA (found by ST-003),
+  RUCHI→PATANJALI, WABCOINDIA→ZFCVINDIA, BURGERKING→RBA, PDSMFL→PDSL, SHRIRAMEPC→SEPC, DALALSTCOM→KEEPLEARN
+  (found by ISIN continuity, ST-013). All in `config/symbol_changes_extra.csv` with evidence.
+- **Noise:** 383 entries in range never trade as an equity (MF schemes, pre-2014 renames re-dated, e.g.
+  BAJAJTEMPO→FORCEMOT and MODILUFT→SPICEJET dated 2019-08-19; placeholder symbols like `LIST000857`). 19 are seen on
+  one side only (SME migrations, delistings). Harmless: they never touch a traded equity's series.
+- **Post-insolvency relistings:** INDOSOLAR→WAAREEINDO (6-year gap, x165), SPENTEX→CLCIND (5 years, x12),
+  NTL→NEUEON (15 months, x2) — same company, new ISIN after a capital restructure. Prices across the gap are not
+  comparable; ST-004 must start a new series there (run gap > 30 days with an ISIN change).
 
 ## Calendar cross-check
 

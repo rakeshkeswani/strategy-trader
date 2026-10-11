@@ -82,6 +82,18 @@ Windows dev reading prod data: set `BHAVCOPY_ARCHIVE_DIR=//100.103.189.15/myinve
 Not yet created (ST-012). MyInvestIQ prod DB: PostgreSQL 16, `portfolio_watch`, user `portfolio_rk`;
 always `psql -h localhost` (peer auth fails on the Unix socket).
 
+## Backup (owned by the homelab project)
+
+| | |
+|---|---|
+| Mirror | `/mnt/rkfspool/daily/rkneo50q/strategy-trader` — FFS Job 3 (`~/ffs_jobs/job3_strategy_trader.ffs_batch`), excludes `venv/`, `__pycache__/`, `.pytest_cache/`, and `.env` (since 2026-10-11; mirrored copy removed) |
+| Schedule | nightly 23:30, n8n "MyInvestIQ (Daily 23:30) FFS Job 2 BackUp": pg_dump → Job 2 → Job 3 |
+| Kopia | daily 01:00 snapshot of `/mnt/rkfspool/daily` (repo `/mnt/rkfspool/backup`; retention 30 daily / 52 weekly / 24 monthly / 2 annual). First snapshot with strategy-trader: 2026-10-11 01:00 |
+| Freshness alert | `/usr/local/bin/homelab-health.sh` daily check 4: Job 3's newest log <= 48 h old and "Completed successfully" (since 2026-10-11) |
+| Verified | 2026-10-11 by the homelab project: mirror complete (3,420 files, 567,793,039 bytes both sides), exclusions hold, restore SHA-256 match (`bhavcopy_legacy/manifest.csv`). Kopia with all four data folders and a `history.csv` restore: re-check after the 2026-10-12 01:00 snapshot |
+
+`.env` must never reach the mirror once it holds Kite keys (ST-006). The mirror is plain text on the `Y:` share.
+
 ## Scheduled jobs
 
 None yet. (n8n at http://192.168.0.250:5678 runs MyInvestIQ only.)
@@ -93,4 +105,6 @@ None yet. (n8n at http://192.168.0.250:5678 runs MyInvestIQ only.)
 | 2026-10-08 | Legacy bhavcopy 2014-01-01..2024-07-05 + 7 weekend sessions | `python -m ingestion.fetch_legacy_bhavcopy` |
 | 2026-10-08 | UDiFF 2024-01-01..2025-08-27 fetched with MyInvestIQ's fetcher, then moved out of its archive and its manifest rows removed (backup `manifest.csv.bak_<time>` in MyInvestIQ's archive) | `scripts/relocate_udiff_gap.py --go` (paths in it are now historical) |
 | 2026-10-08 | Both data folders moved from `myinvestiq/data/` to `strategy-trader/data/`; X: share added | manual `mv`, smb.conf edit |
+| 2026-10-11 | NSE symbol-change snapshot (1,056 renames, newest 2026-09-25) | `python -m ingestion.fetch_symbol_changes` (re-run only to refresh; keeps the previous snapshot) |
+| 2026-10-11 | Corporate-actions history 2014..2025-08-25: raw/2014..2025.json + history.csv (805 rows) | `python -m ingestion.fetch_corporate_actions_history` (re-run reuses raw/; `--force` re-fetches) |
 | 2026-10-11 | NSE UDiFF for Saturday 2025-02-01 (Budget session) into `data/bhavcopy_udiff/` — 167,634 bytes, 2,262 EQ/BE symbols; no manifest row | `curl` with browser User-Agent + Referer from `nsearchives.nseindia.com/content/cm/` |

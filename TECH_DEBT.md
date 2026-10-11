@@ -7,7 +7,7 @@ Workflow, status values and gates: `CLAUDE.md` → "Change workflow".
 | ST | Title | Pri | Status | Since | Area | Next action |
 |---|---|---|---|---|---|---|
 | [ST-001](tech-debt/ST-001.md) | Project scaffold | High | Resolved | 2026-10-08 | repo | — (prod confirmed 2026-10-11) |
-| [ST-002](tech-debt/ST-002.md) | Legacy bhavcopy 2014–Jul 2024 + UDiFF gap + validated readers | High | Moved to Prod — pending verification | 2026-10-08 | data | 2025-02-01 fetched, full-range check missing 0 (2026-10-11); docs + Rakesh sign-off |
+| [ST-002](tech-debt/ST-002.md) | Legacy bhavcopy 2014–Jul 2024 + UDiFF gap + validated readers | High | Resolved | 2026-10-08 | data | — (prod confirmed 2026-10-11) |
 | [ST-003](tech-debt/ST-003.md) | Split/bonus adjustment (corporate actions) | High | Design proposed | 2026-10-08 | data | Claude: final design after ST-014 |
 | [ST-004](tech-debt/ST-004.md) | Point-in-time top-500 universe | High | Not started | 2026-10-08 | data | after ST-003, ST-013 |
 | [ST-005](tech-debt/ST-005.md) | Trendlyne weekly drop + importer | Med | Not started | 2026-10-08 | data | — |

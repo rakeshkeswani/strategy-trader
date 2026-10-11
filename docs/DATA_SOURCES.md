@@ -23,6 +23,9 @@ Present tense. Each trap here was hit for real; the date says when.
   same traded-value units (2026-10-08).
 - `PrvsClsgPric` is the RAW previous close — not adjusted across an ex-date (MyInvestIQ BHAVCOPY_FINDINGS.md).
 - BSE's file for a holiday is an **HTML page with HTTP 200** — MyInvestIQ's fetcher records it as ERROR; harmless.
+- **MyInvestIQ's fetcher skips weekends, so weekend special sessions are missing from UDiFF too.** 2025-02-01
+  (Budget Saturday) was absent until fetched by hand (2026-10-11). Any later weekend session in MyInvestIQ's
+  archive may be missing the same way — the full-range check through `core.prices` finds them.
 - MyInvestIQ's own archive holds only 5 dates before 2025-08-28; the rest of 2024–Aug 2025 is in
   strategy-trader's `data/bhavcopy_udiff/`. **Do not backfill MyInvestIQ's archive** — see vault/LEARNINGS.md 2026-10-08.
 

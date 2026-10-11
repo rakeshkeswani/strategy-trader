@@ -10,6 +10,7 @@ kite_session*.json
 data/
 *.zip
 *.csv
+!config/*.csv
 *.xlsx
 *.parquet
 

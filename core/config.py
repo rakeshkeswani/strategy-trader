@@ -33,3 +33,7 @@ INDEX_ARCHIVE_DIR = _dir_from_env('INDEX_ARCHIVE_DIR')
 # This project's own UDiFF files for dates MyInvestIQ's archive does not hold (2024-01-03 to
 # 2025-08-27; docs/CONFIG.md "one-off operations"). Read-only. Prod: default (<repo>/data/bhavcopy_udiff).
 UDIFF_GAP_DIR = _dir_from_env('UDIFF_GAP_DIR', REPO_ROOT / 'data' / 'bhavcopy_udiff')
+
+# ST-003: corporate-actions history 2014..2025-08-25 (raw/<YYYY>.json + history.csv), written once by
+# ingestion/fetch_corporate_actions_history.py. Prod: default (<repo>/data/corporate_actions).
+CORPORATE_ACTIONS_DIR = _dir_from_env('CORPORATE_ACTIONS_DIR', REPO_ROOT / 'data' / 'corporate_actions')

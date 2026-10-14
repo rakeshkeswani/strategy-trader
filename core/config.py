@@ -45,3 +45,7 @@ SYMBOL_CHANGES_DIR = _dir_from_env('SYMBOL_CHANGES_DIR', REPO_ROOT / 'data' / 's
 # ST-004: price panel (one Parquet table, partitioned by year) written by ingestion/build_price_panel.py.
 # Prod: default (<repo>/data/panel). Schema: docs/DATA_MODEL.md.
 PANEL_DIR = _dir_from_env('PANEL_DIR', REPO_ROOT / 'data' / 'panel')
+
+# ST-004: point-in-time top-500 universe (membership.csv) written by ingestion/build_universe.py.
+# Prod: default (<repo>/data/universe).
+UNIVERSE_DIR = _dir_from_env('UNIVERSE_DIR', REPO_ROOT / 'data' / 'universe')

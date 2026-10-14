@@ -73,7 +73,9 @@ Traps, each hit for real (2026-10-11 unless noted):
   one side only (SME migrations, delistings). Harmless: they never touch a traded equity's series.
 - **Post-insolvency relistings:** INDOSOLAR→WAAREEINDO (6-year gap, x165), SPENTEX→CLCIND (5 years, x12),
   NTL→NEUEON (15 months, x2) — same company, new ISIN after a capital restructure. Prices across the gap are not
-  comparable; ST-004 must start a new series there (run gap > 30 days with an ISIN change).
+  comparable; ST-004 starts a new series there (run gap > 30 days with an ISIN change). The 2014..2026-10-13 panel
+  found 9 such relistings (also KSE after 11.5 years, DSKULKARNI after 8.4, MBECL, BURNPUR, SUMEETINDS) —
+  `tech-debt/ST-004.md`.
 
 ## Calendar cross-check
 

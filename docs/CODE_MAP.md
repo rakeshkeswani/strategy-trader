@@ -13,6 +13,9 @@ Present tense. Update when a module, entry point or call chain changes.
 | `python -m ingestion.fetch_corporate_actions_history [--years Y.. --force]` | one-time CA history 2014..2025-08-25; reuses `raw/` | `CORPORATE_ACTIONS_DIR`, `LOG_DIR` |
 | `python -m scripts.validate_corporate_actions [--start --end --skip-spot]` | ST-003 acceptance checks (jump scan over prices) | `LOG_DIR` |
 | `python -m scripts.validate_symbol_changes [--start --end]` | ST-013 acceptance checks (renames proved by price runs, ISIN continuity) | `LOG_DIR` |
+| `python -m ingestion.build_price_panel [--full] [--start --end]` | price panel: `--full` rebuilds, plain run appends new days | `PANEL_DIR`, `LOG_DIR` |
+| `python -m ingestion.build_universe` | all Nifty 500-aligned reviews -> `membership.csv` (seconds) | `PANEL_DIR`, `UNIVERSE_DIR` |
+| `python -m scripts.validate_universe [--skip-coverage]` | ST-004 acceptance: coverage, no lookahead, survivorship, fidelity vs NSE list | `LOG_DIR` |
 | `python -m pytest -q tests` | unit tests (no network) | — |
 
 ## Modules
@@ -30,6 +33,11 @@ Present tense. Update when a module, entry point or call chain changes.
 | `ingestion/fetch_symbol_changes.py` | downloads `symbolchange.csv`; keeps the previous snapshot |
 | `core/securities.py` | `Securities.load()`; `key_on(symbol, date)` (company key = today's symbol), `symbols_for(key)`, `symbol_for_key_on(key, date)`, `read_stitched_ohlcv(key, start, end)`; `is_equity()` shared with the ST-003 validator |
 | `scripts/validate_symbol_changes.py` | price runs per symbol; confirms listed renames at the stitch; finds same-ISIN handovers missing from the list |
+| `core/panel.py` | panel schema, `assign_series()` (new series at a > 30-day gap with an ISIN change), `write_year()`, `read_panel(start, end, columns)`, `last_rows()` |
+| `ingestion/build_price_panel.py` | reads every day via `core.prices`, equities only, tags `company_key` + `series_id`, writes `data/panel/equity_daily/year=YYYY/` |
+| `core/universe.py` | `review_calendar()`, `build_review()` (point-in-time rule), `load_membership()`, `members_on(membership, date)`, `rebalance_dates()` |
+| `ingestion/build_universe.py` | builds every review from the panel; logs eligibility counts and turnover |
+| `scripts/validate_universe.py` | panel vs raw files, review rebuild with data cut at cut-off, survivorship, overlap with NSE's Nifty 500 list |
 | `ingestion/fetch_corporate_actions_history.py` | one call per year, raw JSON kept, `history.csv` written; fails on unclassified subjects |
 | `scripts/validate_corporate_actions.py` | feed re-parse, jump scan (equities), PREVCLOSE probe, yfinance spot check; reads `config/ca_exceptions.csv` |
 

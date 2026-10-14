@@ -65,7 +65,7 @@ ML and code may never change this objective.
 - MyInvestIQ's archives (UDiFF bhavcopy from 2024-01-01, index closes) are **read-only**,
   via `BHAVCOPY_ARCHIVE_DIR` / `INDEX_ARCHIVE_DIR`. Never write to them.
 - Legacy bhavcopy (2014 to Jul 2024, `nsearchives.nseindia.com/content/historical/EQUITIES/`)
-  is downloaded once by this project (ST-002) into `/home/rakeshbk/strategy-trader/data/bhavcopy_legacy/`
+  is downloaded once by this project (ST-002) into `/home/rakeshbk/stratrad/data/bhavcopy_legacy/`
   (`LEGACY_BHAVCOPY_DIR`). This project is its only writer. Daily files are never downloaded here;
   they come from MyInvestIQ's own 18:00 job.
 - Join prices by symbol, never ISIN (see MyInvestIQ `core/bhavcopy_reader.py`).
@@ -82,8 +82,8 @@ for DB connections, None-checks on fetch results.
 ## Environments
 
 See `docs/CONFIG.md` (machines, folder layout, shares X:/Z:, env vars, one-off operations).
-Prod repo: `/home/rakeshbk/strategy-trader` (venv: `source venv/bin/activate`). Windows: `C:\RKOneDrive\OneDrive\Work\RKInvesting`.
-**Each project's prod folder is its own** — strategy-trader never writes under `/home/rakeshbk/myinvestiq/`.
+Prod repo: `/home/rakeshbk/stratrad` (venv: `source venv/bin/activate`). Windows: `C:\RKOneDrive\OneDrive\Work\RKInvesting`.
+**Each project's prod folder is its own** — stratrad never writes under `/home/rakeshbk/myinvestiq/`.
 
 ---
 
@@ -137,7 +137,7 @@ paths, env vars, shares, servers, schedules, one-off ops → `docs/CONFIG.md` | 
 ## Standing rules carried over from MyInvestIQ
 
 - **SQL is always a runnable shell command:** `psql -h localhost -U portfolio_rk -d portfolio_watch -c "…"`;
-  multi-statement → heredoc with output to `/home/rakeshbk/strategy-trader/logs/<name>_<date>.txt 2>&1`
+  multi-statement → heredoc with output to `/home/rakeshbk/stratrad/logs/<name>_<date>.txt 2>&1`
   (readable on Windows at `X:\logs\`). Never a bare SQL or Python block. Never guess column names.
 - **Docstrings are updated whenever a function is touched.** When code and docstring disagree, the docstring is a bug.
 - **A written instruction is evidence of what was true when written, not of what is true now** — check before acting.
@@ -148,7 +148,7 @@ paths, env vars, shares, servers, schedules, one-off ops → `docs/CONFIG.md` | 
 ## Session rituals
 
 **Start:** read `TECH_DEBT.md` (fresh), the tail of `SESSION_LOG.md` and `TODO.md`; `git status` + current branch on Windows;
-on prod, `ls ~/strategy-trader/logs | tail` for the latest run; state current priorities.
+on prod, `ls ~/stratrad/logs | tail` for the latest run; state current priorities.
 
 **Close:**
 1. Update `TECH_DEBT.md` statuses (only on Rakesh's confirmation) and `tech-debt/ST-NNN.md` details.

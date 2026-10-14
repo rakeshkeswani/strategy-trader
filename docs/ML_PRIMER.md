@@ -1,4 +1,4 @@
-# ML_PRIMER.md — how the ML in strategy-trader works (learning notes)
+# ML_PRIMER.md — how the ML in stratrad works (learning notes)
 
 From the 2026-10-09 learning discussion. Present tense; update if the design changes.
 Design source: the plan doc and `tech-debt/ST-0xx.md`.
@@ -8,8 +8,8 @@ The ML manages strategies; it does not invent trades. Strategies (momentum leade
 low-vol quality, sector strength) are fixed, readable rules. ML decides **how much** to invest, **which strategies**
 get the week's money and **how tight** stops are. Guardrails sit outside the ML; every buy needs Rakesh's approval.
 
-## Generic ML pipeline → strategy-trader
-| # | Generic step | What it means | In strategy-trader |
+## Generic ML pipeline → stratrad
+| # | Generic step | What it means | In stratrad |
 |---|---|---|---|
 | 1 | Historical data | past examples with known outcomes | bhavcopy 2014→today, index closes, VIX, FII flows (ST-002/003/004/013) |
 | 2 | Features + labels | inputs known at that moment + what happened next | RSI, trend, momentum, volatility, volume, breadth → next 4-week return vs Nifty 500 |

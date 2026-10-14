@@ -1,4 +1,4 @@
-# Issue Index — strategy-trader (ST- prefix)
+# Issue Index — stratrad (ST- prefix)
 
 **This file is the index and the ONLY place status lives.** Full detail for each issue is in
 `tech-debt/ST-NNN.md` (frontmatter mirrors this table; if they disagree, this table is right).
@@ -21,4 +21,4 @@ Workflow, status values and gates: `CLAUDE.md` → "Change workflow".
 | [ST-013](tech-debt/ST-013.md) | Symbol changes: stitch price series across renames | High | Resolved | 2026-10-08 | data | — (prod confirmed 2026-10-11, merge `c8a2c77`) |
 | [ST-014](tech-debt/ST-014.md) | Workflow + docs (MyInvestIQ-style), own prod folder + X: share | High | Resolved | 2026-10-08 | repo | — (prod confirmed 2026-10-11) |
 | [ST-015](tech-debt/ST-015.md) | Housekeeping: .gitattributes, git command conventions, sign-offs | Med | Resolved | 2026-10-11 | repo | — (prod confirmed 2026-10-11, merge `1a66fc2`) |
-| [ST-016](tech-debt/ST-016.md) | Rename project strategy-trader -> stratrad (repo, prod folder, share, backup, docs) | High | Design proposed | 2026-10-14 | repo | Rakesh: approve plan; ST-004 paused until done |
+| [ST-016](tech-debt/ST-016.md) | Rename project strategy-trader -> stratrad (repo, prod folder, share, backup, docs) | High | In progress — branch st/ST-016-rename | 2026-10-14 | repo | step by step: docs renamed; next merge, then GitHub rename |

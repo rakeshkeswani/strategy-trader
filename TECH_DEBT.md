@@ -21,4 +21,4 @@ Workflow, status values and gates: `CLAUDE.md` → "Change workflow".
 | [ST-013](tech-debt/ST-013.md) | Symbol changes: stitch price series across renames | High | Resolved | 2026-10-08 | data | — (prod confirmed 2026-10-11, merge `c8a2c77`) |
 | [ST-014](tech-debt/ST-014.md) | Workflow + docs (MyInvestIQ-style), own prod folder + X: share | High | Resolved | 2026-10-08 | repo | — (prod confirmed 2026-10-11) |
 | [ST-015](tech-debt/ST-015.md) | Housekeeping: .gitattributes, git command conventions, sign-offs | Med | Resolved | 2026-10-11 | repo | — (prod confirmed 2026-10-11, merge `1a66fc2`) |
-| [ST-016](tech-debt/ST-016.md) | Rename project strategy-trader -> stratrad (repo, prod folder, share, backup, docs) | High | In progress — branch st/ST-016-rename | 2026-10-14 | repo | step by step: docs renamed; next merge, then GitHub rename |
+| [ST-016](tech-debt/ST-016.md) | Rename project strategy-trader -> stratrad (repo, prod folder, share, backup, docs) | High | In progress — branch st/ST-016-rename | 2026-10-14 | repo | all steps done; 15 Oct: homelab Kopia + restore checks, delete temp backups, Rakesh sign-off |

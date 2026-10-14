@@ -86,11 +86,14 @@ always `psql -h localhost` (peer auth fails on the Unix socket).
 
 | | |
 |---|---|
-| Mirror | `/mnt/rkfspool/daily/rkneo50q/stratrad` — FFS Job 3 (`~/ffs_jobs/job3_strategy_trader.ffs_batch`), excludes `venv/`, `__pycache__/`, `.pytest_cache/`, and `.env` (since 2026-10-11; mirrored copy removed) |
-| Schedule | nightly 23:30, n8n "MyInvestIQ (Daily 23:30) FFS Job 2 BackUp": pg_dump → Job 2 → Job 3 |
+| Mirror | `/mnt/rkfspool/daily/rkneo50q/stratrad` — FFS Job 3 (`/home/rakeshbk/ffs_jobs/job3_stratrad.ffs_batch`; logs `/home/rakeshbk/logs/ffs_jobs/job3_stratrad <timestamp>.html`). Excludes `*/.Trash-*/`, `*/.recycle/`, `/venv/`, `*/__pycache__/`, `*/.pytest_cache/`, `/.env`, `*/.env` (`.env` since 2026-10-11) |
+| Schedule | nightly 23:30, n8n "MyInvestIQ (Daily 23:30) FFS Job 2 BackUp": pg_dump → Job 2 → Job 3 (last node) |
 | Kopia | daily 01:00 snapshot of `/mnt/rkfspool/daily` (repo `/mnt/rkfspool/backup`; retention 30 daily / 52 weekly / 24 monthly / 2 annual). First snapshot with strategy-trader: 2026-10-11 01:00 |
-| Freshness alert | `/usr/local/bin/homelab-health.sh` daily check 4: Job 3's newest log <= 48 h old and "Completed successfully" (since 2026-10-11) |
-| Verified | 2026-10-11 by the homelab project: mirror complete (3,420 files, 567,793,039 bytes both sides), exclusions hold, restore SHA-256 match (`bhavcopy_legacy/manifest.csv`). Kopia with all four data folders and a `history.csv` restore: re-check after the 2026-10-12 01:00 snapshot |
+| Freshness alert | `/usr/local/bin/homelab-health.sh` daily check 4: newest `job3_stratrad *.html` log <= 48 h old and "Completed successfully" (since 2026-10-11; renamed 2026-10-14) |
+| Verified | 2026-10-14 by the homelab project after the ST-016 rename: manual Job 3 run completed (4,007 items, 569 MB); mirror complete (3,792 files, 568,613,234 bytes both sides, 0 differences); exclusions hold; n8n Job 3 node runs `job3_stratrad.ffs_batch`. **Open (2026-10-15):** Kopia 01:00 snapshot contains `rkneo50q/stratrad`; restore `data/corporate_actions/history.csv` SHA-256 match; then the old mirror `rkneo50q/strategy-trader` is removed |
+
+FFS rule (homelab, 2026-10-14): batch files cancel on any warning, so a new FFS target folder must exist before the
+job's first run (the first manual stratrad run stopped until the folder was created).
 
 `.env` must never reach the mirror once it holds Kite keys (ST-006). The mirror is plain text on the `Y:` share.
 

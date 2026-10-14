@@ -53,3 +53,9 @@ close); the next commands ran on `main`. Fixed before push with `git branch -f` 
 Separately, three uncommitted edits in the Windows working copy reverted to their committed text with no conflict
 copy (cause unknown; OneDrive suspected). **Check the branch name in the output before committing, and confirm
 `git status` lists every file expected before `git add`.**
+
+## 2026-10-14 — a remapped drive is invisible to Claude until the desktop app restarts
+After X: was remapped from `\\100.103.189.15\strategy-trader` to `\\...\stratrad`, Claude's file access refused X:\
+("symlink target outside allowed directories") although X:\ was allowed. The filesystem extension resolves each allowed
+drive to its network path **at startup** and checks both. **After remapping a drive, restart the Claude desktop app.**
+Same day (homelab): FFS batch files cancel on any warning, so a new target folder must exist before a job's first run.

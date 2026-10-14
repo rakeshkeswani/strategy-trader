@@ -1,17 +1,17 @@
 # CONFIG.md — environments, paths, shares, settings
 
 Present tense: how things are set up NOW. Update in the same commit as any change.
-Last updated: 2026-10-11 (ST-003)
+Last updated: 2026-10-14 (ST-016: project renamed strategy-trader -> stratrad; older dated rows keep the old name)
 
 ## Machines
 
 | | Windows dev | Ubuntu prod |
 |---|---|---|
 | Machine | Rakesh's laptop | `rkneo50q` — 192.168.0.250 (LAN), 100.103.189.15 (Tailscale) |
-| Repo | `C:\RKOneDrive\OneDrive\Work\RKInvesting` | `/home/rakeshbk/strategy-trader` |
-| Python | 3.14 (user site-packages) | 3.12.3 in venv `~/strategy-trader/venv` (needs `python3.12-venv`) |
-| Run things | `python -m <module>` from repo root | `cd ~/strategy-trader && source venv/bin/activate && python -m <module>` |
-| GitHub | `git@github.com:rakeshkeswani/strategy-trader.git` (private), branch `main` | same, `git pull` only |
+| Repo | `C:\RKOneDrive\OneDrive\Work\RKInvesting` | `/home/rakeshbk/stratrad` |
+| Python | 3.14 (user site-packages) | 3.12.3 in venv `~/stratrad/venv` (needs `python3.12-venv`) |
+| Run things | `python -m <module>` from repo root | `cd ~/stratrad && source venv/bin/activate && python -m <module>` |
+| GitHub | `git@github.com:rakeshkeswani/stratrad.git` (private), branch `main` | same, `git pull` only |
 
 `(venv)` in the prod prompt = the venv is active in that shell; `deactivate` leaves it. MyInvestIQ uses
 `/usr/bin/python3`, not this venv — run MyInvestIQ scripts with the venv deactivated.
@@ -19,8 +19,8 @@ Last updated: 2026-10-11 (ST-003)
 ## Folder layout on prod
 
 ```
-/home/rakeshbk/strategy-trader/          repo (code)
-├── data/                                git-ignored — ALL strategy-trader data
+/home/rakeshbk/stratrad/          repo (code)
+├── data/                                git-ignored — ALL stratrad data
 │   ├── bhavcopy_legacy/                 NSE legacy CM bhavcopy 2014-01-01..2024-07-05, <YYYY>/cm…bhav.csv.zip + manifest.csv
 │   ├── bhavcopy_udiff/                  NSE+BSE UDiFF 2024-01-03..2025-08-27 + manifest.csv, plus NSE 2025-02-01 (one-time, read-only)
 │   ├── corporate_actions/               ST-003: raw/<YYYY>.json (feed 2014..2025, byte-for-byte) + history.csv
@@ -29,8 +29,8 @@ Last updated: 2026-10-11 (ST-003)
 └── logs/                                git-ignored — fetch/validate logs and issue CSVs
 ```
 
-**Rule (Rakesh, 2026-10-08):** each project's folder belongs to that project. strategy-trader never writes under
-`/home/rakeshbk/myinvestiq/`; it only reads MyInvestIQ's shared data. MyInvestIQ may read strategy-trader's data
+**Rule (Rakesh, 2026-10-08):** each project's folder belongs to that project. stratrad never writes under
+`/home/rakeshbk/myinvestiq/`; it only reads MyInvestIQ's shared data. MyInvestIQ may read stratrad's data
 read-only under its own TD.
 
 ## Read-only dependencies on MyInvestIQ
@@ -47,12 +47,12 @@ read-only under its own TD.
 | Drive | UNC | Prod path | Samba section |
 |---|---|---|---|
 | Z: | `\\100.103.189.15\myinvestiq` | `/home/rakeshbk/myinvestiq` | `[myinvestiq]` |
-| X: | `\\100.103.189.15\strategy-trader` | `/home/rakeshbk/strategy-trader` | `[strategy-trader]` (added 2026-10-08) |
+| X: | `\\100.103.189.15\stratrad` | `/home/rakeshbk/stratrad` | `[stratrad]` (added 2026-10-08) |
 | Y: | rkfspool | — | `[rkfspool]` (not this project) |
 
-`[strategy-trader]` in `/etc/samba/smb.conf`: `path = /home/rakeshbk/strategy-trader`, `valid users = rakeshbk`,
+`[stratrad]` in `/etc/samba/smb.conf`: `path = /home/rakeshbk/stratrad`, `valid users = rakeshbk`,
 `create mask = 0644` — identical settings to `[myinvestiq]`. Mapped with
-`net use X: \\100.103.189.15\strategy-trader /persistent:yes`.
+`net use X: \\100.103.189.15\stratrad /persistent:yes`.
 Fetchers refuse to write to a `//host/...` path, so Windows can never write into prod's archives.
 
 ## Environment variables (`.env`, never committed; template `.env.example`)
@@ -60,7 +60,7 @@ Fetchers refuse to write to a `//host/...` path, so Windows can never write into
 | Var | Default (unset) | Prod value | Read by |
 |---|---|---|---|
 | `BHAVCOPY_ARCHIVE_DIR` | none — required | `/home/rakeshbk/myinvestiq/data/bhavcopy` | `core/udiff_bhavcopy_reader.py` |
-| `UDIFF_GAP_DIR` | none | `/home/rakeshbk/strategy-trader/data/bhavcopy_udiff` | `core/udiff_bhavcopy_reader.py` |
+| `UDIFF_GAP_DIR` | none | `/home/rakeshbk/stratrad/data/bhavcopy_udiff` | `core/udiff_bhavcopy_reader.py` |
 | `LEGACY_BHAVCOPY_DIR` | `<repo>/data/bhavcopy_legacy` | default (may be set explicitly) | legacy reader + fetcher |
 | `INDEX_ARCHIVE_DIR` | none | (not yet used) | — |
 | `LOG_DIR` | `<repo>/logs` | default | fetch + validate scripts |
@@ -69,8 +69,8 @@ Fetchers refuse to write to a `//host/...` path, so Windows can never write into
 | `TRENDLYNE_DROP_DIR`, `KITE_*`, `DB_*`, `TELEGRAM_*`, `ANTHROPIC_API_KEY` | — | not yet set | later STs |
 
 Windows dev reading prod data: set `BHAVCOPY_ARCHIVE_DIR=//100.103.189.15/myinvestiq/data/bhavcopy`,
-`LEGACY_BHAVCOPY_DIR=//100.103.189.15/strategy-trader/data/bhavcopy_legacy`,
-`UDIFF_GAP_DIR=//100.103.189.15/strategy-trader/data/bhavcopy_udiff` (forward slashes — dotenv does not unescape `\`).
+`LEGACY_BHAVCOPY_DIR=//100.103.189.15/stratrad/data/bhavcopy_legacy`,
+`UDIFF_GAP_DIR=//100.103.189.15/stratrad/data/bhavcopy_udiff` (forward slashes — dotenv does not unescape `\`).
 
 ## Curated config in git (`config/`)
 
@@ -86,11 +86,14 @@ always `psql -h localhost` (peer auth fails on the Unix socket).
 
 | | |
 |---|---|
-| Mirror | `/mnt/rkfspool/daily/rkneo50q/strategy-trader` — FFS Job 3 (`~/ffs_jobs/job3_strategy_trader.ffs_batch`), excludes `venv/`, `__pycache__/`, `.pytest_cache/`, and `.env` (since 2026-10-11; mirrored copy removed) |
-| Schedule | nightly 23:30, n8n "MyInvestIQ (Daily 23:30) FFS Job 2 BackUp": pg_dump → Job 2 → Job 3 |
+| Mirror | `/mnt/rkfspool/daily/rkneo50q/stratrad` — FFS Job 3 (`/home/rakeshbk/ffs_jobs/job3_stratrad.ffs_batch`; logs `/home/rakeshbk/logs/ffs_jobs/job3_stratrad <timestamp>.html`). Excludes `*/.Trash-*/`, `*/.recycle/`, `/venv/`, `*/__pycache__/`, `*/.pytest_cache/`, `/.env`, `*/.env` (`.env` since 2026-10-11) |
+| Schedule | nightly 23:30, n8n "MyInvestIQ (Daily 23:30) FFS Job 2 BackUp": pg_dump → Job 2 → Job 3 (last node) |
 | Kopia | daily 01:00 snapshot of `/mnt/rkfspool/daily` (repo `/mnt/rkfspool/backup`; retention 30 daily / 52 weekly / 24 monthly / 2 annual). First snapshot with strategy-trader: 2026-10-11 01:00 |
-| Freshness alert | `/usr/local/bin/homelab-health.sh` daily check 4: Job 3's newest log <= 48 h old and "Completed successfully" (since 2026-10-11) |
-| Verified | 2026-10-11 by the homelab project: mirror complete (3,420 files, 567,793,039 bytes both sides), exclusions hold, restore SHA-256 match (`bhavcopy_legacy/manifest.csv`). Kopia with all four data folders and a `history.csv` restore: re-check after the 2026-10-12 01:00 snapshot |
+| Freshness alert | `/usr/local/bin/homelab-health.sh` daily check 4: newest `job3_stratrad *.html` log <= 48 h old and "Completed successfully" (since 2026-10-11; renamed 2026-10-14) |
+| Verified | 2026-10-14 by the homelab project after the ST-016 rename: manual Job 3 run completed (4,007 items, 569 MB); mirror complete (3,792 files, 568,613,234 bytes both sides, 0 differences); exclusions hold; n8n Job 3 node runs `job3_stratrad.ffs_batch`. **Open (2026-10-15):** Kopia 01:00 snapshot contains `rkneo50q/stratrad`; restore `data/corporate_actions/history.csv` SHA-256 match; then the old mirror `rkneo50q/strategy-trader` is removed |
+
+FFS rule (homelab, 2026-10-14): batch files cancel on any warning, so a new FFS target folder must exist before the
+job's first run (the first manual stratrad run stopped until the folder was created).
 
 `.env` must never reach the mirror once it holds Kite keys (ST-006). The mirror is plain text on the `Y:` share.
 

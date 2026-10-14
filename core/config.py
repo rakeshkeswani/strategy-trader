@@ -41,3 +41,7 @@ CORPORATE_ACTIONS_DIR = _dir_from_env('CORPORATE_ACTIONS_DIR', REPO_ROOT / 'data
 # ST-003 (for ST-013 too): NSE symbol-change list snapshot, written by ingestion/fetch_symbol_changes.py.
 # Prod: default (<repo>/data/symbol_changes).
 SYMBOL_CHANGES_DIR = _dir_from_env('SYMBOL_CHANGES_DIR', REPO_ROOT / 'data' / 'symbol_changes')
+
+# ST-004: price panel (one Parquet table, partitioned by year) written by ingestion/build_price_panel.py.
+# Prod: default (<repo>/data/panel). Schema: docs/DATA_MODEL.md.
+PANEL_DIR = _dir_from_env('PANEL_DIR', REPO_ROOT / 'data' / 'panel')

@@ -1,20 +1,28 @@
-# Data model — strategy-trader
+# Data model — stratrad
 
-Status: **PROPOSAL 2026-10-11 — pending Rakesh's approval.** Decided so far (Rakesh, 2026-10-11): research data in
-files, operational data in PostgreSQL; the database (ST-012) is built after ST-010 and before any execution issue.
+Status: **APPROVED by Rakesh 2026-10-14.** Decided (Rakesh): research data in files,
+operational data in PostgreSQL; the database (ST-012) is built after ST-010 and before any execution issue; project
+and database name **stratrad** (2026-10-14). Review 2026-10-14 added: sectors, guardrails before proposing and before
+ordering, the exit path, charges per order, position adjustments, instrument_token, the benchmark.
 
 ## 1. Two stores
 
 | | Research store | Operational store |
 |---|---|---|
-| Holds | prices, corporate actions, renames, universe, features, backtest runs | strategies, models, signals, proposals, approvals, orders, GTT stops, positions, guardrail and audit logs, daily snapshots |
+| Holds | prices, corporate actions, renames, sectors, universe, features, backtest runs | strategies, models, signals, proposals, approvals, orders, GTT stops, positions, guardrail and audit logs, daily snapshots |
 | Written by | batch jobs; everything derived can be rebuilt from raw downloads | the live system every trading day; **cannot** be rebuilt |
 | Needs | fast bulk reads (years x 500 stocks) | transactions, constraints, audit trail, concurrent access |
-| Home | files under `data/` (Parquet for large tables, CSV for small reviewed ones) | PostgreSQL database `strategy_trader` on rkneo50q (ST-012), own schema and roles |
-| Backup | FFS Job 3 mirror + Kopia (`docs/CONFIG.md`) | `pg_dump` in the nightly chain (homelab, with ST-012) |
+| Home | files under `data/` (Parquet for large tables, CSV for small reviewed ones) | PostgreSQL database `stratrad` on rkneo50q (ST-012) |
+| Backup | FFS Job 3 mirror + Kopia (`docs/CONFIG.md`) | `pg_dump` in the nightly 23:30 chain (set up with the homelab project in ST-012) |
 
 The research store never reads the operational store. The operational store reads research outputs only through
 versioned artifacts (a strategy config, a model version, a universe as-of date).
+
+**Placement (ST-012):** a new database `stratrad` on the existing PostgreSQL 16 server (rkneo50q:5432) next to
+MyInvestIQ's `portfolio_watch` — separate databases, so neither can touch the other's tables. Roles: `stratrad_app`
+(owner, the live system), `stratrad_reader` (read-only reporting). MyInvestIQ grants a read-only role SELECT on
+`corporate_actions` and `fii_daily_flow` only; stratrad reads them over a second connection. Server maintenance only
+outside market hours (both projects share the server). Size: ~8 MB empty, < 10 MB per year of live data.
 
 ## 2. Identifiers (used in both stores)
 
@@ -24,17 +32,19 @@ versioned artifacts (a strategy config, a model version, a universe as-of date).
 | `series_id` | `company_key@YYYY-MM-DD` (first date of the series); a new series starts at a trading gap > 30 days with an ISIN change (post-insolvency relistings) | ST-004 |
 | `symbol` | the NSE symbol actually traded on that date (= Kite `tradingsymbol` for live orders) | bhavcopy / Kite |
 | `isin` | the day's ISIN; informational (changes at splits) | bhavcopy / Kite |
+| `instrument_token` | Kite's numeric instrument id (live only) | Kite instruments dump |
 | `trade_date` | the IST trading date (`date`, no time) | — |
 
 `company_key` can change when a company renames again. Research outputs are regenerated, so that is fine there.
-Operational rows therefore store the **facts as traded** (`symbol`, `isin`, Kite `instrument_token`) and resolve
+Operational rows therefore store the **facts as traded** (`symbol`, `isin`, `instrument_token`) and resolve
 `company_key` when reading, never the other way round.
 
 ## 3. Research store (files, `data/` on prod; git-ignored)
 
 **Raw — immutable downloads, never edited:**
 `bhavcopy_legacy/`, `bhavcopy_udiff/`, `corporate_actions/raw/`, `symbol_changes/symbolchange.csv`, `trendlyne/`
-(ST-005); MyInvestIQ's `data/bhavcopy/` and `data/indices/` read-only.
+(ST-005); MyInvestIQ's `data/bhavcopy/` and `data/indices/` read-only — the latter includes the **Nifty 500 index**,
+the benchmark for every backtest and for live performance.
 
 **Derived — rebuildable by a script, each with a validator:**
 
@@ -43,17 +53,19 @@ Operational rows therefore store the **facts as traded** (`symbol`, `isin`, Kite
 | `corporate_actions/history.csv` | action | symbol, ex_date, action_type, adjustment_factor | ST-003 |
 | `panel/equity_daily.parquet` | equity x trading day | trade_date, series_id, company_key, symbol, isin, series, open, high, low, close, prev_close, volume, traded_value | ST-004 |
 | `universe/membership.csv` | rebalance x member | cutoff_date, effective_from, series_id, company_key, symbol, rank, median_traded_value, trading_freq | ST-004 |
+| `reference/sectors.csv` | company x period | company_key, sector, industry, valid_from, valid_to, source | ST-005 |
 | `features/<set>/<date>.parquet` | stock x day | series_id, trade_date, feature columns | ST-010 |
 | `backtests/<run_id>/` | one run | `config.yaml`, `trades.parquet`, `equity_curve.parquet`, `metrics.json` | ST-010 |
 
 Rules: prices in the panel are **raw**; split/bonus adjustment is applied at read time from `history.csv` +
 `config/ca_overrides.csv`, so a corrected factor never needs a panel rebuild. Point-in-time: a row dated D uses only
-data available at D's close. Parquet (pyarrow), snappy compression, partitioned by year if the file grows past ~1 GB.
+data available at D's close; sectors are dated (`valid_from`) because classifications change. Parquet (pyarrow),
+snappy compression, partitioned by year if a file grows past ~1 GB.
 
 **Curated, in git (`config/`):** `ca_overrides.csv`, `ca_exceptions.csv`, `symbol_changes_extra.csv`,
 `symbol_exceptions.csv`, later `guardrails.yaml` and `strategies/*.yaml`. Every row has a reason.
 
-## 4. Operational store (PostgreSQL `strategy_trader`, ST-012)
+## 4. Operational store (PostgreSQL `stratrad`, ST-012)
 
 Conventions: `timestamptz` stored in UTC, shown in IST; money `numeric(14,2)` INR; prices `numeric(12,2)`; quantities
 `integer`; every table has `id bigserial`, `created_at`; status changes are new rows in an events table, not silent
@@ -64,32 +76,50 @@ updates; raw broker payloads kept as `jsonb`; schema changes only through number
 |---|---|---|---|
 | `strategies` | strategy version | name, version, config (jsonb), status, approved_by, approved_at | ST-010/011 |
 | `models` | model version | kind (regime / allocator / ranker), version, artifact path, metrics (jsonb), gate, approved_at | ML phase |
-| `signals` | stock x run | run_date, strategy_id, model_id, symbol, isin, score, rank, rationale (jsonb) | ST-011 |
-| `proposals` | proposed buy | signal_id, qty, limit_price, stop_price, amount, status (pending / approved / rejected / expired), decided_at, telegram ids | ST-011 |
-| `orders` | Kite order | proposal_id, kite_order_id, side, qty, price, type, status, filled_qty, avg_price, raw (jsonb) | ST-006/007 |
+| `signals` | stock x run | run_date, strategy_id, model_id, symbol, isin, sector, score, rank, rationale (jsonb) | ST-011 |
+| `proposals` | proposed buy | signal_id, symbol, sector, qty, limit_price, stop_price, amount, status (pending / approved / rejected / expired / blocked), decided_at, telegram ids | ST-011 |
+| `orders` | Kite order | proposal_id or position_id, kite_order_id, symbol, instrument_token, side, qty, price, type, reason (entry / stop / manual / exit), status, filled_qty, **avg_price** (Kite's average fill price), raw (jsonb) | ST-006/007 |
+| `order_charges` | executed order | order_id, brokerage, stt, exchange_txn, sebi, stamp_duty, gst, total, source (virtual_contract_note / contract_note), reconciled_at | ST-006/009 |
 | `gtt_orders` | Kite GTT | position_id, kite_gtt_id, trigger_price, limit_price, status | ST-009 |
-| `positions` | holding lot | symbol, isin, strategy_id, entry date/price/qty, exit date/price/qty, status, realised_pnl | ST-009 |
+| `positions` | holding lot | symbol, isin, instrument_token, sector, strategy_id, entry date/price/qty, exit date/price/qty, exit_reason (stop / trail / manual / rule), status, realised_pnl (net of charges) | ST-009 |
+| `position_adjustments` | corporate action on a held lot | position_id, ex_date, action_type, factor, qty before/after, entry price before/after, stop before/after | ST-009 |
 | `order_events` | status change | order_id / gtt_id / proposal_id, from_status, to_status, at, detail (jsonb) | ST-006+ |
-| `guardrail_events` | guardrail check | rule, decision (allow / block), limits snapshot (jsonb), context (jsonb) | ST-008 |
-| `daily_snapshots` | trading day | invested_at_cost, market_value, realised / unrealised pnl, rolling 12-month loss %, tier (ok / alert / no-buys / halt) | ST-008/009 |
-| `reconciliations` | day x difference | Kite holdings / GTTs vs `positions` / `gtt_orders` | ST-009 |
+| `guardrail_events` | guardrail check | stage (before_proposal / before_order), rule, decision (allow / block), limits snapshot (jsonb), context (jsonb) | ST-008 |
+| `daily_snapshots` | trading day | invested_at_cost, market_value, realised / unrealised pnl (net of charges), rolling 12-month loss %, tier (ok / alert / no-buys / halt), exposure by strategy and sector (jsonb) | ST-008/009 |
+| `reconciliations` | day x difference | Kite holdings / GTTs vs `positions` / `gtt_orders`; monthly: `order_charges` vs the official contract note | ST-009 |
 | `audit_log` | action | actor (system / Rakesh), action, details (jsonb); append-only | all |
 
-Read-only from MyInvestIQ (`portfolio_watch`, via a read-only role): `corporate_actions`, `fii_daily_flow` (ST-012).
+Charges: each executed order gets its charges the same day from Kite's virtual contract note (`POST /charges/orders`;
+responses come back in request order — match by position, not by order id). They are reconciled monthly against
+the official contract note / Console; the difference is recorded in `reconciliations`. P&L and the rolling 12-month
+loss are net of charges.
+
+Corporate actions on held lots: Kite adjusts the holding quantity; stratrad records a `position_adjustments` row
+(quantity, entry price and stop scaled by the factor) and re-places the GTT. Reconciliation flags any mismatch.
+
+Read-only from MyInvestIQ (`portfolio_watch`): `corporate_actions`, `fii_daily_flow` (ST-012).
 
 ## 5. Flow
 
 ```
-NSE / Kite / Trendlyne --> raw files --> derived files (panel, universe, features) --> backtests
+NSE / Kite / Trendlyne --> raw files --> derived files (panel, universe, sectors, features) --> backtests
                                                    |
-                         approved strategy / model version
+                                     approved strategy / model version
                                                    v
-             daily run --> signals --> proposals --(Rakesh approves)--> guardrails --> orders --> positions / GTT
-                                                   ^                                        |
-                                    daily_snapshots, reconciliations  <---------------------+
+ENTRY: daily run --> signals --> guardrails #1 --> proposals --(Rakesh approves)--> guardrails #2 --> order
+          (blocked -> logged, never proposed)                (blocked -> proposal 'blocked')          |
+                                                                                                      v
+                                                                         position + GTT stop (+ charges)
+EXIT:  GTT triggered / trailing rule / manual sell in Kite --> order --> position closed (+ charges)
+DAILY: Kite holdings, GTTs, corporate actions --> reconciliations, position_adjustments --> daily_snapshots
+       daily_snapshots --> loss tier (ok / alert / no-buys / halt) --> guardrails
 ```
 
+Guardrails run twice: **#1 before proposing**, so Rakesh is never asked to approve something that would be blocked;
+**#2 just before placing the order**, because limits can move between approval and order (other fills, a loss
+tier change).
+
 ## 6. Open for ST-012
-Exact column types and constraints, indexes, roles (app writer, read-only reporting), retention of raw broker
-payloads, and whether research outputs the live run needs (the current universe, the latest features) are read from
-files or loaded into the database each morning.
+Exact column types and constraints, indexes, roles' exact grants, retention of raw broker payloads, and whether
+research outputs the live run needs (the current universe, sectors, the latest features) are read from files or
+loaded into the database each morning.

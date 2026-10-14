@@ -27,7 +27,7 @@ Present tense. Each trap here was hit for real; the date says when.
   (Budget Saturday) was absent until fetched by hand (2026-10-11). Any later weekend session in MyInvestIQ's
   archive may be missing the same way — the full-range check through `core.prices` finds them.
 - MyInvestIQ's own archive holds only 5 dates before 2025-08-28; the rest of 2024–Aug 2025 is in
-  strategy-trader's `data/bhavcopy_udiff/`. **Do not backfill MyInvestIQ's archive** — see vault/LEARNINGS.md 2026-10-08.
+  stratrad's `data/bhavcopy_udiff/`. **Do not backfill MyInvestIQ's archive** — see vault/LEARNINGS.md 2026-10-08.
 
 ## Reading prices
 
@@ -39,7 +39,7 @@ A missing file raises `BhavcopyDateMissingError`; a missing symbol is simply abs
 
 NSE `https://www.nseindia.com/api/corporates-corporateActions?index=equities&from_date=DD-MM-YYYY&to_date=DD-MM-YYYY`.
 No cookie needed. One call per calendar year is complete (2018 Q1 from a year call = a Q1-only call, 192 records)
-and history reaches 2013 (2026-10-11). strategy-trader holds 2014-01-01..2025-08-25 (`data/corporate_actions/`);
+and history reaches 2013 (2026-10-11). stratrad holds 2014-01-01..2025-08-25 (`data/corporate_actions/`);
 MyInvestIQ owns 2025-08-26 onward (its `corporate_actions` table, last fetched 2026-08-28 — ST-012 merges it).
 Scope: BONUS `X:Y` → factor (Y+X)/Y; SPLIT face value A→B → A/B; CONSOLIDATION A→B → A/B (<1).
 Traps, each hit for real (2026-10-11 unless noted):

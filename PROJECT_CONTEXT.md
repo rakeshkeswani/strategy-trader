@@ -33,11 +33,11 @@ Phase 0 (Foundations). Price history 2014→today in place and validated (ST-002
 | Data | Source | Location |
 |---|---|---|
 | Daily prices 2024-01-01 onward (UDiFF) | MyInvestIQ archive, read-only | `BHAVCOPY_ARCHIVE_DIR` (prod: myinvestiq `data/bhavcopy/`) |
-| Daily prices 2024-01-03 to 2025-08-27 (UDiFF) | One-time fetch by MyInvestIQ's own fetcher on 2026-10-08, relocated out of its archive (it would have changed MyInvestIQ's Sunday price-history job) | `/home/rakeshbk/strategy-trader/data/bhavcopy_udiff/`; 403 NSE + 403 BSE files + manifest.csv |
+| Daily prices 2024-01-03 to 2025-08-27 (UDiFF) | One-time fetch by MyInvestIQ's own fetcher on 2026-10-08, relocated out of its archive (it would have changed MyInvestIQ's Sunday price-history job) | `/home/rakeshbk/stratrad/data/bhavcopy_udiff/`; 403 NSE + 403 BSE files + manifest.csv |
 | Index closes | MyInvestIQ archive, read-only | `INDEX_ARCHIVE_DIR` (prod: myinvestiq `data/indices/`) |
-| Daily prices 2014 to 2024-07-05 (legacy format) | `https://nsearchives.nseindia.com/content/historical/EQUITIES/{YYYY}/{MON}/cm{DD}{MON}{YYYY}bhav.csv.zip` — verified 2026-10-08 for 2014, 2016, 2019, 2023, Jul 2024 (`archives.` host 403s on 2014) | `/home/rakeshbk/strategy-trader/data/bhavcopy_legacy/`; one-time download, this project is the only writer (ST-002) |
+| Daily prices 2014 to 2024-07-05 (legacy format) | `https://nsearchives.nseindia.com/content/historical/EQUITIES/{YYYY}/{MON}/cm{DD}{MON}{YYYY}bhav.csv.zip` — verified 2026-10-08 for 2014, 2016, 2019, 2023, Jul 2024 (`archives.` host 403s on 2014) | `/home/rakeshbk/stratrad/data/bhavcopy_legacy/`; one-time download, this project is the only writer (ST-002) |
 | Corporate actions (splits, bonuses) | NSE corporate actions; reuse MyInvestIQ `core/corporate_actions.py` | ST-003 |
-| Fundamentals, sector | Trendlyne Nifty 500 Data Downloader export, dropped weekly by Rakesh | `/home/rakeshbk/strategy-trader/data/trendlyne/`, dropped via X: (ST-005) |
+| Fundamentals, sector | Trendlyne Nifty 500 Data Downloader export, dropped weekly by Rakesh | `/home/rakeshbk/stratrad/data/trendlyne/`, dropped via X: (ST-005) |
 | FII flows | MyInvestIQ `fii_daily_flow` table | read-only |
 
 Jan-Jul 2024 exists in both formats — used to validate the legacy reader (ST-002).

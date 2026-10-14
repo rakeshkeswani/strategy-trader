@@ -1,4 +1,4 @@
-# strategy-trader — Python 3.12+ (prod 3.12, dev 3.14)
+# stratrad — Python 3.12+ (prod 3.12, dev 3.14)
 requests>=2.31.0
 python-dotenv>=1.0.0
 # data: price panel + universe (ST-004); pandas was previously only a yfinance dependency

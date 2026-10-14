@@ -52,7 +52,7 @@ Done 2026-10-11: ST-015 (merge `1a66fc2`), ST-003 corporate actions (merge `bf2f
   across the gap; universe filters keep penny stocks out anyway. ST-013 found the same for post-insolvency relistings
   (INDOSOLAR->WAAREEINDO, SPENTEX->CLCIND, NTL->NEUEON): start a new series at a run gap > 30 days with an ISIN change.
   Identities come from `core/securities.py` (key = today's symbol).
-- ST-005 (Trendlyne): the `[strategy-trader]` Samba share is read-only (Samba default), so the weekly drop needs a
+- ST-005 (Trendlyne): the `[stratrad]` Samba share is read-only (Samba default), so the weekly drop needs a
   writable path — e.g. a folder on the rkfspool share (Y:) that the importer reads.
 - ST-006 (Kite): keys in `.env` → exclude `.env` from the backup mirror (see backup handover).
 - ST-012: read-only Postgres role on `portfolio_watch` for `corporate_actions` and `fii_daily_flow`.

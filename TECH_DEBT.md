@@ -9,7 +9,7 @@ Workflow, status values and gates: `CLAUDE.md` → "Change workflow".
 | [ST-001](tech-debt/ST-001.md) | Project scaffold | High | Resolved | 2026-10-08 | repo | — (prod confirmed 2026-10-11) |
 | [ST-002](tech-debt/ST-002.md) | Legacy bhavcopy 2014–Jul 2024 + UDiFF gap + validated readers | High | Resolved | 2026-10-08 | data | — (prod confirmed 2026-10-11) |
 | [ST-003](tech-debt/ST-003.md) | Split/bonus adjustment (corporate actions) — history 2014..2025-08-25 | High | Resolved | 2026-10-08 | data | — (prod confirmed 2026-10-11, merge `bf2f689`) |
-| [ST-004](tech-debt/ST-004.md) | Point-in-time top-500 universe | High | Merged to main — awaiting prod deploy | 2026-10-08 | data | Rakesh: prod run (build_universe, validate_universe) |
+| [ST-004](tech-debt/ST-004.md) | Point-in-time top-500 universe | High | Resolved | 2026-10-08 | data | — (prod confirmed 2026-10-14, merge `1fe1a08`) |
 | [ST-005](tech-debt/ST-005.md) | Trendlyne weekly drop + importer | Med | Not started | 2026-10-08 | data | — |
 | [ST-006](tech-debt/ST-006.md) | Kite Connect app + daily login | High | Not started | 2026-10-08 | execution | — |
 | [ST-007](tech-debt/ST-007.md) | Mumbai VM order gateway (static IP, Tailscale) | High | Not started | 2026-10-08 | execution | — |

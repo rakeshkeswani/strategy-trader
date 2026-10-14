@@ -81,7 +81,7 @@ updates; raw broker payloads kept as `jsonb`; schema changes only through number
 | `orders` | Kite order | proposal_id or position_id, kite_order_id, symbol, instrument_token, side, qty, price, type, reason (entry / stop / manual / exit), status, filled_qty, **avg_price** (Kite's average fill price), raw (jsonb) | ST-006/007 |
 | `order_charges` | executed order | order_id, brokerage, stt, exchange_txn, sebi, stamp_duty, gst, total, source (virtual_contract_note / contract_note), reconciled_at | ST-006/009 |
 | `gtt_orders` | Kite GTT | position_id, kite_gtt_id, trigger_price, limit_price, status | ST-009 |
-| `positions` | holding lot | symbol, isin, instrument_token, sector, strategy_id, entry date/price/qty, exit date/price/qty, exit_reason (stop / trail / manual / rule), status, realised_pnl (net of charges) | ST-009 |
+| `positions` | holding lot (stratrad strategies and `manual`) | symbol, isin, instrument_token, sector, strategy_id, entry date/price/qty, exit date/price/qty, exit_reason (stop / trail / manual / rule), status, realised_pnl (net of charges) | ST-009 |
 | `position_adjustments` | corporate action on a held lot | position_id, ex_date, action_type, factor, qty before/after, entry price before/after, stop before/after | ST-009 |
 | `order_events` | status change | order_id / gtt_id / proposal_id, from_status, to_status, at, detail (jsonb) | ST-006+ |
 | `guardrail_events` | guardrail check | stage (before_proposal / before_order), rule, decision (allow / block), limits snapshot (jsonb), context (jsonb) | ST-008 |
@@ -93,6 +93,23 @@ Charges: each executed order gets its charges the same day from Kite's virtual c
 responses come back in request order — match by position, not by order id). They are reconciled monthly against
 the official contract note / Console; the difference is recorded in `reconciliations`. P&L and the rolling 12-month
 loss are net of charges.
+
+**Lots, strategies and the shared account (Rakesh, 2026-10-14):**
+- A position is a **lot**: each weekly buy is its own lot with its own entry price, its own stop and its own GTT (never
+  one stop on an averaged entry). Each lot belongs to one strategy; one lot = one order (separate orders per strategy,
+  even for the same stock on the same day), so charges belong to exactly one lot.
+- A stock may be held by several strategies at once; each keeps its own lots and its own stop rule (from its config).
+- stratrad trades in Rakesh's **existing Zerodha account**. His own holdings and trades are lots of the strategy
+  **`manual`**, imported from Kite holdings/trades. Shares are interchangeable: a stratrad stop sells that lot's
+  quantity and closes that lot; `manual` lots keep their quantity.
+- Daily reconciliation: all lots of a stock (every strategy + `manual`) = Kite's holding; stratrad's GTT quantities +
+  any of Rakesh's own GTTs never exceed the holding.
+- Performance: per strategy from its own lots only (returns, drawdown, hit rate, equity curve); portfolio = all
+  stratrad lots, net of charges, vs the Nifty 500 — the 12-month 20% loss limit applies here. `manual` is reported
+  separately and never counts against stratrad's caps.
+- Tax: the broker applies FIFO across the whole account (a stratrad sale may count as Rakesh's oldest shares). Not
+  modelled per lot; taken at portfolio level from Kite's tax P&L. Holds are mostly 1-6 months and Rakesh's gains exceed
+  the exemption anyway, so the STCG/LTCG split makes no practical difference (Rakesh).
 
 Corporate actions on held lots: Kite adjusts the holding quantity; stratrad records a `position_adjustments` row
 (quantity, entry price and stop scaled by the factor) and re-places the GTT. Reconciliation flags any mismatch.

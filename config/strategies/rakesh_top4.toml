@@ -1,0 +1,18 @@
+# ST-010: Rakesh's own momentum rule (as described by Rakesh, 2026-10-14). Read by backtest/engine.py.
+name = "rakesh_top4"
+description = "Top 4 by 1-year gain, weekly, amounts in proportion to gain; sell oldest lot when the stock's average loss reaches 15% (daily) or one lot a week while its average gain is above 50%; exit after 12 months"
+
+[signal]
+rank_by = "ret_252"          # 1-year return (252 trading days)
+top_n = 4
+weights = "by_gain"          # the week's budget split in proportion to each pick's 1-year gain
+
+[sizing]
+weekly_budget = 10000
+min_lot = 0
+
+[exit]
+mode = "stock_average"
+loss_trigger = -0.15         # stock's average across open lots, checked at each close -> sell oldest lot at that close
+profit_trigger = 0.50        # checked at Friday close -> sell oldest lot at Monday open, one per week
+time_exit_months = 12

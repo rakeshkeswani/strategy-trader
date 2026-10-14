@@ -51,8 +51,8 @@ the benchmark for every backtest and for live performance.
 | File | Grain | Key columns | Built by |
 |---|---|---|---|
 | `corporate_actions/history.csv` | action | symbol, ex_date, action_type, adjustment_factor | ST-003 |
-| `panel/equity_daily.parquet` | equity x trading day | trade_date, series_id, company_key, symbol, isin, series, open, high, low, close, prev_close, volume, traded_value | ST-004 |
-| `universe/membership.csv` | rebalance x member | cutoff_date, effective_from, series_id, company_key, symbol, rank, median_traded_value, trading_freq | ST-004 |
+| `panel/equity_daily/year=YYYY/part-0.parquet` | equity x trading day | trade_date, series_id, company_key, symbol, isin, series, open, high, low, close, prev_close, volume, traded_value | ST-004 |
+| `universe/membership.csv` | rebalance x member | cutoff_date, effective_from, rank, series_id, company_key, symbol, median_traded_value, trading_freq, close | ST-004 |
 | `reference/sectors.csv` | company x period | company_key, sector, industry, valid_from, valid_to, source | ST-005 |
 | `features/<set>/<date>.parquet` | stock x day | series_id, trade_date, feature columns | ST-010 |
 | `backtests/<run_id>/` | one run | `config.yaml`, `trades.parquet`, `equity_curve.parquet`, `metrics.json` | ST-010 |

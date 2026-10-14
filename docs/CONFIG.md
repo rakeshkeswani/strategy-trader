@@ -68,6 +68,7 @@ Fetchers refuse to write to a `//host/...` path, so Windows can never write into
 | `SYMBOL_CHANGES_DIR` | `<repo>/data/symbol_changes` | default | `fetch_symbol_changes`, `core/symbol_changes.py` |
 | `PANEL_DIR` | `<repo>/data/panel` | default | `build_price_panel`, `core/panel.py` |
 | `UNIVERSE_DIR` | `<repo>/data/universe` | default | `build_universe`, `core/universe.py` |
+| `BENCHMARK_DIR` | `<repo>/data/benchmark` | default | `fetch_benchmark` (Nifty 500 index, `nifty500.csv`) |
 | `TRENDLYNE_DROP_DIR`, `KITE_*`, `DB_*`, `TELEGRAM_*`, `ANTHROPIC_API_KEY` | — | not yet set | later STs |
 
 Windows dev reading prod data: set `BHAVCOPY_ARCHIVE_DIR=//100.103.189.15/myinvestiq/data/bhavcopy`,

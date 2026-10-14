@@ -49,3 +49,7 @@ PANEL_DIR = _dir_from_env('PANEL_DIR', REPO_ROOT / 'data' / 'panel')
 # ST-004: point-in-time top-500 universe (membership.csv) written by ingestion/build_universe.py.
 # Prod: default (<repo>/data/universe).
 UNIVERSE_DIR = _dir_from_env('UNIVERSE_DIR', REPO_ROOT / 'data' / 'universe')
+
+# ST-010: benchmark index history (nifty500.csv) written by ingestion/fetch_benchmark.py.
+# Prod: default (<repo>/data/benchmark).
+BENCHMARK_DIR = _dir_from_env('BENCHMARK_DIR', REPO_ROOT / 'data' / 'benchmark')

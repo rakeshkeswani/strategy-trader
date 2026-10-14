@@ -48,6 +48,46 @@ clustering · deep learning (LSTM/Transformers — needs far more data; skipped 
 Python on rkneo50q, no GPU: pandas (features), LightGBM / hmmlearn / scikit-learn (models), MLflow (versions,
 parameters, scores — every trade traceable to the model that proposed it).
 
+## The strategy allocator — features and labels (2026-10-11)
+
+**Question it answers each week:** which strategies get this week's ₹10,000?
+**One row = one strategy in one week** (not a stock). Prerequisite: every strategy is run over history
+(ST-010 backtest engine) to produce a weekly track record — holdings, returns, drawdowns.
+Size: ~5 strategies × ~600 weeks (2014–2026) ≈ **3,000 rows** — small, which shapes the design.
+
+**Features — known at Friday's close, before the week starts**
+
+| Group | Features | Why |
+|---|---|---|
+| Strategy's own record | return over last 4 / 13 / 26 weeks; Sharpe; current drawdown from peak; hit rate of recent picks | strategies have hot and cold streaks |
+| What the strategy sees now | number of qualifying stocks (signal breadth); average signal strength of top picks; their average volatility; sector concentration | 3 weak candidates ≠ 40 strong ones |
+| Market context (same for all strategies that week) | regime probabilities; % of stocks above 200 DMA; India VIX level and 4-week change; Nifty 500 3-month return; FII flows 4 weeks; cross-sectional return dispersion | each strategy suits different conditions |
+
+Gradient-boosted trees find interactions on their own (e.g. momentum works when breadth is high AND VIX is low).
+
+**Label — what happened next:** the strategy's next 4-week return, after costs, minus the Nifty 500 over the same
+4 weeks (skill, not market), minus a penalty for the worst drawdown inside those 4 weeks (the Objective's
+"loss first"). It is a ranking model, so the order within each week is what matters (rank 1..5).
+
+**Illustrative week (made-up numbers)**
+
+| Week of 6 Jan 2020 | 13-wk return | Qualifying stocks | VIX | Breadth | Label (next 4 wks vs Nifty, less DD penalty) |
+|---|---|---|---|---|---|
+| Momentum leaders | +9% | 42 | 12 | 68% | +2.1% (rank 1) |
+| RSI pullback | +3% | 18 | 12 | 68% | +0.4% (rank 3) |
+| 52-week breakout | +6% | 25 | 12 | 68% | +1.2% (rank 2) |
+| Low-vol quality | +1% | 60 | 12 | 68% | −0.3% (rank 4) |
+| Sector strength | +4% | 30 | 12 | 68% | −0.8% (rank 5) |
+
+**Live use:** each Monday score all strategies, fund the top one or two, within the ₹40,000-per-strategy cap.
+
+**Traps specific to the allocator**
+- **Overlapping labels:** each 4-week label overlaps the next three weeks' labels → purge a gap between training
+  and test periods so the model cannot peek through neighbouring weeks.
+- **Small data:** short feature list, shallow trees, and it must beat a **rule-based allocator** ("fund the
+  strategy with the best 13-week return per unit of risk"). If it cannot, the rule stays — an honest, likely outcome.
+- **Look-ahead:** features use data up to Friday's close only; the label starts from the next trading day.
+
 ## Until the ML earns its place (Gate 2)
 All three layers are simple rules: invest the full ₹10k, momentum strategy, fixed ATR-multiple stops. ML runs on
 paper in the background and takes over only if it beats those rules out of sample.

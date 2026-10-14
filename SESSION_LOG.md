@@ -49,3 +49,20 @@
 - Decided: universe aligned to Nifty 500 semi-annual review; research data in files (Parquet), operational data in
   Postgres; DB (ST-012) after ST-010, before execution. `docs/DATA_MODEL.md` proposed (`fa316fb`), awaiting approval.
 - Status at close: ST-004 Design proposed on `st/ST-004-universe` (uncommitted `requirements.txt`). Resume: `TODO.md`.
+
+## 2026-10-14 — ST-004 closed; ST-016 rename done (checks pending); data model approved; ST-010 engine built
+- Day start: ST-004 index status fixed (was "Not started"). Data model reviewed with Rakesh and approved (stratrad DB,
+  sectors, guardrails twice, exit path, charges per order via Kite's virtual contract note, position adjustments).
+- ST-016 rename strategy-trader -> stratrad, one step at a time: GitHub repo, prod folder + venv + .env + Samba share,
+  laptop X: (Claude desktop app restarted to re-resolve the drive), homelab Job 3/health/map; prod proof PASS. Open:
+  Kopia + restore checks 15 Oct, temp backup deletion, sign-off.
+- ST-004: panel 5,399,886 rows / 165 MB (9 relisting series breaks); universe 25 Nifty 500-aligned reviews; validator
+  PASS (coverage 3,156 days, no lookahead 25/25, survivorship, fidelity 82.6% / top-100 99). Resolved, merge `1fe1a08`.
+- Decisions: lots per weekly buy with own GTT stops; multiple strategies per stock; Rakesh's holdings = strategy
+  `manual` in the same Zerodha account; per-stock cap 8% of capital cap (soft); new listings conservative; fidelity
+  alarm 80% / 95; time exit after >12 months (LTCG); ST-017 dashboards and ST-018 trades-to-sheet logged.
+- ST-010: design approved (costs and tax verified from zerodha.com/charges and incometaxindia.gov.in); pieces 1-3 built
+  (adjusted prices 762/763, benchmark NSE+Yahoo with 13 special sessions filled, engine, 86 tests). Rakesh's own rule
+  (top 4 by 1-year gain, gain-weighted, average-based exits) added. Preliminary trial 2014-10..2023-12: Nifty 500 12.8%/yr;
+  baseline 2.0%; rakesh_top4 faithful 19.4% (max DD -56%); within limits 8.4%. Not yet validated.
+- Slips: a commit landed on main again (branch switch refused); moved with merge + `reset --keep`.

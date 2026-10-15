@@ -4,14 +4,14 @@ Read at session start (after `TECH_DEBT.md` and the tail of `SESSION_LOG.md`). T
 Last updated: 2026-10-14 evening (session close: ST-004 resolved; ST-016 awaiting homelab checks; ST-010 pieces 1-3 done).
 
 ## Resume here (new conversation)
-1. **ST-016 rename — close it.** Homelab reports Kopia check 4 (15 Oct 01:00 snapshot contains `rkneo50q/stratrad`)
+1. ~~**ST-016 rename — close it.**~~ Done 2026-10-15 (merge `150f9da`). Homelab reports Kopia check 4 (15 Oct 01:00 snapshot contains `rkneo50q/stratrad`)
    and restore check 5 (`data/corporate_actions/history.csv`, SHA-256), then removes the old mirror. Then Rakesh deletes
    `~/env_backup_st016_20261014` and `/etc/samba/smb.conf.pre_st016_20261014` on prod (Claude gives the block), git pull
    on prod, sign-off. Record in CONFIG.md "Backup".
 2. **ST-010 baseline backtest** — branch `st/ST-010-baseline` (open, last commit `ac666fb`). Pieces 1-3 done (adjusted
    prices, indicators + benchmark, engine + runner, both strategies). Next:
-   a. headline fix: worst 12-month loss also as % of the value 12 months earlier; count unmatched actions inside the run
-      period only;
+   a. ~~headline fix~~ done 2026-10-15: Test 1 = worst rolling 12-month rupee loss at cost / stake (ST-010.md);
+      unmatched actions inside the loaded window only;
    b. piece 5 validator on real outputs (limits every day, lots complete, charges recompute, no lookahead, repeatable);
    c. piece 4 report card (plain-language summary, consistency, bootstrap range, risk vs Nifty 500, costs/tax per year);
    d. prod runs (fetch_benchmark first), then walk Rakesh through the three cards (baseline; rakesh_top4 faithful and

@@ -7,7 +7,8 @@ Loads the panel (core/panel.py), applies split/bonus adjustment (core/adjusted.p
 (core/indicators.py + a 252-day return), takes the universe in force (core/universe.py) and the Nifty 500 benchmark
 (data/benchmark/nifty500.csv), runs backtest/engine.py and writes:
   config.json (strategy, limits, period, data notes), lots.csv, orders.csv, daily.csv (with the benchmark), tax.csv,
-  metrics.json (headline numbers; the full report card is ST-010 piece 4).
+  metrics.json (headline numbers incl. Test 1 = worst rolling 12-month rupee loss / the strategy's stake; card: piece 4).
+  lots.csv carries pnl and pnl_pct per lot (closed at the sale, open at the last close).
 run_id = <strategy>_<limits|faithful>_<start>_<end>. Re-running the same arguments overwrites the same folder.
 
 Usage (on rkneo50q, from the repo root):
@@ -43,19 +44,89 @@ LOOKBACK_DAYS = 420
 PANEL_COLS = ['trade_date', 'series_id', 'symbol', 'open', 'high', 'low', 'close', 'prev_close', 'volume']
 
 
+def actions_in_window(actions: pd.DataFrame, lo: date, hi: date) -> tuple[pd.DataFrame, int]:
+    """Actions with lo <= ex_date <= hi (the loaded price window) and the number outside it (skipped, not 'unmatched')."""
+    ed = pd.to_datetime(actions['ex_date']).dt.date
+    inside = (ed >= lo) & (ed <= hi)
+    return actions[inside].reset_index(drop=True), int((~inside).sum())
+
+
 def load_market(start: date, end: date) -> tuple[pd.DataFrame, dict]:
-    """Adjusted panel rows for [start - lookback, end] with ret_126, ret_252, sma_200, rsi_14; plus data notes."""
-    panel = read_panel(start - timedelta(days=LOOKBACK_DAYS), end, columns=PANEL_COLS)
-    factors, unmatched = series_factors(panel, actions_frame(load_history()))
+    """Adjusted panel rows for [start - lookback, end] with ret_126, ret_252, sma_200, rsi_14; plus data notes.
+
+    Only actions dated inside the loaded window are matched (earlier/later ones cannot affect these prices' ratios);
+    'unmatched' therefore lists real gaps only, not actions after the run's end.
+    """
+    lo = start - timedelta(days=LOOKBACK_DAYS)
+    panel = read_panel(lo, end, columns=PANEL_COLS)
+    actions, outside = actions_in_window(actions_frame(load_history()), lo, end)
+    factors, unmatched = series_factors(panel, actions)
     adj = add_indicators(adjust(panel, factors), ret_n=126, sma_n=200, rsi_n=14)
     adj['ret_252'] = adj['close'] / adj.groupby('series_id', sort=False)['close'].shift(252) - 1
-    notes = {'panel_rows': len(panel), 'actions_matched': len(factors), 'actions_unmatched': len(unmatched),
+    notes = {'panel_rows': len(panel), 'actions_window': f'{lo}..{end}', 'actions_outside_window': outside,
+             'actions_matched': len(factors), 'actions_unmatched': len(unmatched),
              'unmatched': [f"{r.symbol} {r.ex_date}" for r in unmatched.itertuples()]}
     return adj, notes
 
 
-def headline(daily: pd.DataFrame, capital: float) -> dict:
-    """Headline numbers: final equity, CAGR, max drawdown, worst rolling 12-month change, vs the benchmark."""
+def lot_pnl(lots: pd.DataFrame, last_close: dict) -> pd.DataFrame:
+    """Level (a): each lot's gain/loss after charges / its buy value. Closed lots at the sale; open lots at the last
+    close (`last_close`: series_id -> adjusted close on the run's last day; sell charges not yet paid)."""
+    l = lots.copy()
+    closed = l['exit_date'].notna()
+    mark = l['qty'] * l['series_id'].map(last_close)
+    value = np.where(closed, l['sell_value'] - l['sell_charges'], mark)
+    l['pnl'] = value - l['buy_value'] - l['buy_charges']
+    l['pnl_pct'] = l['pnl'] / l['buy_value']
+    return l
+
+
+def pnl_at_cost(daily: pd.DataFrame, lots: pd.DataFrame, window_days: int | None = 365) -> pd.DataFrame:
+    """Level (b) per day, in rupees: gain/loss of open lots + of lots sold in the window, after charges.
+
+    Open lot on day d: entry_date <= d and not yet sold at d's mark (exit_date > d or open). Open lots are valued at
+    the engine's daily mark (`holdings`); sold lots at sale value. `window_days=None` = since start. Tax payments are
+    not part of it (they are not market losses). Returns date, pnl, bought (total buy value of the lots counted).
+    `bought` is NOT a denominator for Test 1: money reused lot after lot is counted again each time (2026-10-15: the
+    baseline's worst year showed Rs -16,924 on Rs 4.9 L 'bought' = -3.5% while it never had more than Rs 53k in);
+    Test 1 divides by the strategy's stake instead (headline()).
+    """
+    days = pd.to_datetime(daily['date']).values.astype('datetime64[D]')[:, None]
+    entry = pd.to_datetime(lots['entry_date']).values.astype('datetime64[D]')[None, :]
+    ex = pd.to_datetime(lots['exit_date']).values.astype('datetime64[D]')[None, :]
+    sold = ~np.isnat(ex)
+    is_open = (entry <= days) & (~sold | (ex > days))
+    in_win = sold & (ex <= days)
+    if window_days is not None:
+        in_win &= ex > days - np.timedelta64(window_days, 'D')
+    bv = lots['buy_value'].to_numpy()
+    bc = lots['buy_charges'].to_numpy()
+    sold_pnl = np.nan_to_num((lots['sell_value'] - lots['sell_charges']).to_numpy() - bv - bc)
+    open_cost = is_open @ bv
+    if not np.allclose(open_cost, daily['invested_cost'].to_numpy(), atol=0.01):
+        raise ValueError('open lots from lots.csv do not match the engine\'s invested_cost')
+    pnl = daily['holdings'].to_numpy() - open_cost - is_open @ bc + in_win @ sold_pnl
+    return pd.DataFrame({'date': daily['date'].to_numpy(), 'pnl': pnl, 'bought': open_cost + in_win @ bv})
+
+
+def worst_12m_return(values: pd.Series, dates: pd.Series, capital: float) -> tuple[float, str]:
+    """Worst change vs the value 365 days earlier (first year: vs the starting capital); and the day it ends."""
+    s = pd.Series(values.to_numpy(), index=pd.to_datetime(dates))
+    past = s.reindex(s.index - pd.Timedelta(days=365), method='ffill').to_numpy()
+    r = s.to_numpy() / np.where(np.isnan(past), capital, past) - 1
+    i = int(np.argmin(r))
+    return round(float(r[i]), 4), str(s.index[i].date())
+
+
+def headline(daily: pd.DataFrame, capital: float, lots: pd.DataFrame | None = None,
+             last_close: dict | None = None) -> dict:
+    """Headline numbers: final equity, CAGR, max drawdown, the Test 1 loss measure, lots, vs the benchmark.
+
+    Test 1 (Rakesh, 2026-10-15): the worst rolling 12-month rupee gain/loss at cost (level b, pnl_at_cost) divided
+    by the strategy's stake (`capital`: Rs 1 L now; its own cap once a second strategy is live) must be better than
+    -20%. `worst_12m_return` (vs the value 12 months earlier) is shown for both the strategy and the Nifty 500, for a
+    like-for-like risk comparison. `worst_12m_change_of_capital` (equity incl. tax payments, vs Rs 1 L) for reference.
+    """
     d = daily.copy()
     d['date'] = pd.to_datetime(d['date'])
     years = (d['date'].iloc[-1] - d['date'].iloc[0]).days / 365.25
@@ -72,7 +143,28 @@ def headline(daily: pd.DataFrame, capital: float) -> dict:
            'bench_cagr': round(float((bench.iloc[-1] / capital) ** (1 / years) - 1), 4),
            'bench_max_drawdown': round(float((bench / bench.cummax() - 1).min()), 4),
            'tax_paid': round(float(d['tax_paid'].iloc[-1]), 2), 'charges_paid': round(float(d['charges_paid'].iloc[-1]), 2)}
-    out['loss_first_pass'] = out['worst_12m_change_of_capital'] > -0.20
+    out['worst_12m_return'], out['worst_12m_return_end'] = worst_12m_return(eq, d['date'], capital)
+    out['bench_worst_12m_return'], out['bench_worst_12m_return_end'] = worst_12m_return(bench, d['date'], capital)
+    if lots is None or lots.empty:
+        out['loss_first_pass'] = None
+        return out
+    roll_b = pnl_at_cost(daily, lots, 365)
+    since = pnl_at_cost(daily, lots, None)
+    i = int(np.argmin(roll_b['pnl'].to_numpy()))
+    out['stake'] = capital
+    out['worst_12m_pnl_rupees'] = round(float(roll_b['pnl'].iloc[i]), 2)
+    out['worst_12m_pnl_date'] = str(pd.Timestamp(roll_b['date'].iloc[i]).date())
+    out['worst_12m_of_stake'] = round(float(roll_b['pnl'].iloc[i]) / capital, 4)
+    out['since_start_pnl_rupees'] = round(float(since['pnl'].iloc[-1]), 2)
+    out['since_start_of_stake'] = round(float(since['pnl'].iloc[-1]) / capital, 4)
+    lp = lot_pnl(lots, last_close or {})
+    out['lots'] = int(len(lp))
+    out['lots_open_at_end'] = int(lp['exit_date'].isna().sum())
+    out['lot_hit_rate'] = round(float((lp['pnl'] > 0).mean()), 4)
+    out['worst_lot_pct'] = round(float(lp['pnl_pct'].min()), 4)
+    out['best_lot_pct'] = round(float(lp['pnl_pct'].max()), 4)
+    out['lots_below_minus_15pct'] = int((lp['pnl_pct'] <= -0.15).sum())
+    out['loss_first_pass'] = out['worst_12m_of_stake'] > -0.20
     return out
 
 
@@ -104,7 +196,9 @@ def main() -> int:
         logger.critical(f"benchmark missing on {int(daily['bench_close'].isna().sum())} days")
         return 1
     daily['bench_value'] = 100000 * daily['bench_close'] / daily['bench_close'].iloc[0]
-    metrics = headline(daily, 100000)
+    last = market[market['trade_date'] <= args.end].sort_values('trade_date').groupby('series_id')['close'].last()
+    metrics = headline(daily, 100000, res.lots, last.to_dict())
+    res.lots = lot_pnl(res.lots, last.to_dict())
     run_id = f"{args.strategy}_{'faithful' if args.faithful else 'limits'}_{args.start}_{args.end}"
     out = BACKTESTS_DIR / run_id
     if str(out).replace('\\', '/').startswith('//'):

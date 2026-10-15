@@ -30,6 +30,7 @@ import pandas as pd
 
 from backtest.engine import Backtest
 from core.adjusted import actions_frame, adjust, series_factors
+from core.demergers import load_demergers
 from core.config import BENCHMARK_DIR, LOG_DIR, REPO_ROOT, _dir_from_env
 from core.corporate_actions import load_history
 from core.indicators import add_indicators
@@ -62,12 +63,14 @@ def load_market(start: date, end: date, panel_hook=None) -> tuple[pd.DataFrame, 
     panel = read_panel(lo, end, columns=PANEL_COLS)
     if panel_hook is not None:
         panel = panel_hook(panel)
-    actions, outside = actions_in_window(actions_frame(load_history()), lo, end)
+    splits = actions_frame(load_history()).assign(kind='split')
+    actions, outside = actions_in_window(pd.concat([splits, load_demergers()], ignore_index=True), lo, end)
     factors, unmatched = series_factors(panel, actions)
     adj = add_indicators(adjust(panel, factors), ret_n=126, sma_n=200, rsi_n=14)
     adj['ret_252'] = adj['close'] / adj.groupby('series_id', sort=False)['close'].shift(252) - 1
     notes = {'panel_rows': len(panel), 'actions_window': f'{lo}..{end}', 'actions_outside_window': outside,
-             'actions_matched': len(factors), 'actions_unmatched': len(unmatched),
+             'actions_matched': len(factors), 'demergers_applied': int((actions['kind'] == 'demerger').sum()),
+             'actions_unmatched': len(unmatched),
              'unmatched': [f"{r.symbol} {r.ex_date}" for r in unmatched.itertuples()]}
     return adj, notes
 

@@ -15,7 +15,7 @@ Workflow, status values and gates: `CLAUDE.md` → "Change workflow".
 | [ST-007](tech-debt/ST-007.md) | Mumbai VM order gateway (static IP, Tailscale) | High | Not started | 2026-10-08 | execution | — |
 | [ST-008](tech-debt/ST-008.md) | Guardrail service + guardrails.yaml | High | Not started | 2026-10-08 | execution | — |
 | [ST-009](tech-debt/ST-009.md) | GTT stops, trailing, daily reconciliation | High | Not started | 2026-10-08 | execution | — |
-| [ST-010](tech-debt/ST-010.md) | Baseline momentum strategy + quick backtest | High | In progress — branch st/ST-010-baseline | 2026-10-08 | strategy | — |
+| [ST-010](tech-debt/ST-010.md) | Baseline momentum strategy + quick backtest | High | Resolved | 2026-10-08 | strategy | — (prod confirmed 2026-10-15; verdict + card changes open in ST-010.md) |
 | [ST-011](tech-debt/ST-011.md) | Telegram proposal and approval flow | High | Not started | 2026-10-08 | notify | — |
 | [ST-012](tech-debt/ST-012.md) | Project database + read-only role on MyInvestIQ DB | Med | Not started | 2026-10-08 | database | includes CA merge + freshness check (from ST-003) |
 | [ST-013](tech-debt/ST-013.md) | Symbol changes: stitch price series across renames | High | Resolved | 2026-10-08 | data | — (prod confirmed 2026-10-11, merge `c8a2c77`) |

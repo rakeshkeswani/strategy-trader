@@ -51,14 +51,17 @@ def actions_in_window(actions: pd.DataFrame, lo: date, hi: date) -> tuple[pd.Dat
     return actions[inside].reset_index(drop=True), int((~inside).sum())
 
 
-def load_market(start: date, end: date) -> tuple[pd.DataFrame, dict]:
+def load_market(start: date, end: date, panel_hook=None) -> tuple[pd.DataFrame, dict]:
     """Adjusted panel rows for [start - lookback, end] with ret_126, ret_252, sma_200, rsi_14; plus data notes.
 
     Only actions dated inside the loaded window are matched (earlier/later ones cannot affect these prices' ratios);
     'unmatched' therefore lists real gaps only, not actions after the run's end.
+    `panel_hook(raw_panel) -> raw_panel` lets the validator change raw prices before adjustment (lookahead test).
     """
     lo = start - timedelta(days=LOOKBACK_DAYS)
     panel = read_panel(lo, end, columns=PANEL_COLS)
+    if panel_hook is not None:
+        panel = panel_hook(panel)
     actions, outside = actions_in_window(actions_frame(load_history()), lo, end)
     factors, unmatched = series_factors(panel, actions)
     adj = add_indicators(adjust(panel, factors), ret_n=126, sma_n=200, rsi_n=14)
@@ -168,6 +171,52 @@ def headline(daily: pd.DataFrame, capital: float, lots: pd.DataFrame | None = No
     return out
 
 
+def run_id_of(strategy_name: str, faithful: bool, start: date, end: date) -> str:
+    """Output folder name: <strategy>_<limits|faithful>_<start>_<end>."""
+    return f"{strategy_name}_{'faithful' if faithful else 'limits'}_{start}_{end}"
+
+
+def run_backtest(strategy_name: str, start: date, end: date, faithful: bool, panel_hook=None) -> dict:
+    """Load data, run one strategy, add the benchmark and headline numbers. No files written.
+
+    Returns strategy, limits, notes, market, res (engine Result; res.lots with per-lot pnl), daily (with benchmark),
+    metrics. Raises ValueError when the benchmark misses a trading day.
+    """
+    t0 = time.time()
+    strategy = tomllib.loads((STRATEGY_DIR / f'{strategy_name}.toml').read_text(encoding='utf-8'))
+    limits = None if faithful else LIMITS
+    market, notes = load_market(start, end, panel_hook)
+    logger.info(f'market: {notes["panel_rows"]:,} rows; actions matched {notes["actions_matched"]}, unmatched '
+                f'{notes["actions_unmatched"]} {notes["unmatched"]} ({time.time() - t0:.0f}s)')
+    membership = load_membership()
+    res = Backtest(strategy, market, lambda d: set(members_on(membership, d)['series_id']), start, end, limits).run()
+    bench = pd.read_csv(BENCHMARK_DIR / 'nifty500.csv', parse_dates=['trade_date'])
+    bench['trade_date'] = bench['trade_date'].dt.date
+    daily = res.daily.merge(bench.rename(columns={'trade_date': 'date', 'close': 'bench_close'})[['date', 'bench_close']],
+                            on='date', how='left')
+    if daily['bench_close'].isna().any():
+        raise ValueError(f"benchmark missing on {int(daily['bench_close'].isna().sum())} days")
+    daily['bench_value'] = 100000 * daily['bench_close'] / daily['bench_close'].iloc[0]
+    last = market[market['trade_date'] <= end].sort_values('trade_date').groupby('series_id')['close'].last()
+    metrics = headline(daily, 100000, res.lots, last.to_dict())
+    res.lots = lot_pnl(res.lots, last.to_dict())
+    return {'strategy': strategy, 'limits': limits, 'notes': notes, 'market': market, 'res': res, 'daily': daily,
+            'metrics': metrics}
+
+
+def write_outputs(out: Path, r: dict, start: date, end: date) -> None:
+    """Write config.json, lots.csv, orders.csv, daily.csv, tax.csv, metrics.json to `out`."""
+    out.mkdir(parents=True, exist_ok=True)
+    (out / 'config.json').write_text(json.dumps({'strategy': r['strategy'], 'limits': r['limits'], 'start': str(start),
+                                                 'end': str(end), 'data': r['notes']}, indent=1, default=str),
+                                     encoding='utf-8')
+    r['res'].lots.to_csv(out / 'lots.csv', index=False)
+    r['res'].orders.to_csv(out / 'orders.csv', index=False)
+    r['daily'].to_csv(out / 'daily.csv', index=False)
+    r['res'].tax.to_csv(out / 'tax.csv', index=False)
+    (out / 'metrics.json').write_text(json.dumps(r['metrics'], indent=1), encoding='utf-8')
+
+
 def main() -> int:
     """CLI entry point."""
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -180,40 +229,18 @@ def main() -> int:
     logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s',
                         handlers=[logging.StreamHandler(sys.stdout)])
     t0 = time.time()
-    strategy = tomllib.loads((STRATEGY_DIR / f'{args.strategy}.toml').read_text(encoding='utf-8'))
-    limits = None if args.faithful else LIMITS
-    market, notes = load_market(args.start, args.end)
-    logger.info(f'market: {notes["panel_rows"]:,} rows; actions matched {notes["actions_matched"]}, unmatched '
-                f'{notes["actions_unmatched"]} {notes["unmatched"]} ({time.time() - t0:.0f}s)')
-    membership = load_membership()
-    res = Backtest(strategy, market, lambda d: set(members_on(membership, d)['series_id']),
-                   args.start, args.end, limits).run()
-    bench = pd.read_csv(BENCHMARK_DIR / 'nifty500.csv', parse_dates=['trade_date'])
-    bench['trade_date'] = bench['trade_date'].dt.date
-    daily = res.daily.merge(bench.rename(columns={'trade_date': 'date', 'close': 'bench_close'})[['date', 'bench_close']],
-                            on='date', how='left')
-    if daily['bench_close'].isna().any():
-        logger.critical(f"benchmark missing on {int(daily['bench_close'].isna().sum())} days")
-        return 1
-    daily['bench_value'] = 100000 * daily['bench_close'] / daily['bench_close'].iloc[0]
-    last = market[market['trade_date'] <= args.end].sort_values('trade_date').groupby('series_id')['close'].last()
-    metrics = headline(daily, 100000, res.lots, last.to_dict())
-    res.lots = lot_pnl(res.lots, last.to_dict())
-    run_id = f"{args.strategy}_{'faithful' if args.faithful else 'limits'}_{args.start}_{args.end}"
-    out = BACKTESTS_DIR / run_id
+    out = BACKTESTS_DIR / run_id_of(args.strategy, args.faithful, args.start, args.end)
     if str(out).replace('\\', '/').startswith('//'):
         logger.critical(f'Refusing to write to a network share: {out}')
         return 2
-    out.mkdir(parents=True, exist_ok=True)
-    (out / 'config.json').write_text(json.dumps({'strategy': strategy, 'limits': limits, 'start': str(args.start),
-                                                 'end': str(args.end), 'data': notes}, indent=1, default=str),
-                                     encoding='utf-8')
-    res.lots.to_csv(out / 'lots.csv', index=False)
-    res.orders.to_csv(out / 'orders.csv', index=False)
-    daily.to_csv(out / 'daily.csv', index=False)
-    res.tax.to_csv(out / 'tax.csv', index=False)
-    (out / 'metrics.json').write_text(json.dumps(metrics, indent=1), encoding='utf-8')
-    logger.info(f'METRICS: {metrics}')
+    try:
+        r = run_backtest(args.strategy, args.start, args.end, args.faithful)
+    except ValueError as e:
+        logger.critical(str(e))
+        return 1
+    write_outputs(out, r, args.start, args.end)
+    res = r['res']
+    logger.info(f'METRICS: {r["metrics"]}')
     logger.info(f'lots {len(res.lots)}, orders {len(res.orders)}, open at end {res.notes["open_lots_at_end"]} -> {out} '
                 f'({time.time() - t0:.0f}s)')
     return 0

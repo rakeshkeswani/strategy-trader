@@ -12,7 +12,8 @@ Last updated: 2026-10-14 evening (session close: ST-004 resolved; ST-016 awaitin
    prices, indicators + benchmark, engine + runner, both strategies). Next:
    a. ~~headline fix~~ done 2026-10-15: Test 1 = worst rolling 12-month rupee loss at cost / stake (ST-010.md);
       unmatched actions inside the loaded window only;
-   b. piece 5 validator on real outputs (limits every day, lots complete, charges recompute, no lookahead, repeatable);
+   b. ~~validator (piece 5)~~ done 2026-10-15: `scripts/validate_backtest.py`; laptop: all three PASS (warning:
+      MIRZAINT demerger -> ST-019); tax beyond cash = tax owed (option b);
    c. piece 4 report card (plain-language summary, consistency, bootstrap range, risk vs Nifty 500, costs/tax per year);
    d. prod runs (fetch_benchmark first), then walk Rakesh through the three cards (baseline; rakesh_top4 faithful and
       within limits). Preliminary numbers in `tech-debt/ST-010.md`.

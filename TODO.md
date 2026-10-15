@@ -1,20 +1,18 @@
 # TODO.md — open items and resume point
 
 Read at session start (after `TECH_DEBT.md` and the tail of `SESSION_LOG.md`). Tick/remove as done.
-Last updated: 2026-10-15 (ST-016 and ST-010 resolved; next: Claude's review document, Rakesh's verdict).
+Last updated: 2026-10-15 (ST-016, ST-010, ST-019 resolved; review document written; next: Rakesh's verdict).
 
 ## Resume here (new conversation)
-1. **Strategy review (after ST-010, resolved 2026-10-15):** Claude writes one review document: the three cards +
-   comparison (prod: `data/backtests/`), a recommendation per strategy, and the card change list from Rakesh's
-   questions (so far: should Test 1 see paper profits given back? see ST-010.md "Still open"). Rakesh is still
-   processing the cards; the verdict is his call. Open design question: under the limits, profits above the Rs 1 L
-   at-cost cap sit idle — should the cap grow with realised gains? (re-test, recorded).
-2. **ST-019 demergers** (option a: adjust like splits) — needed before trusting rakesh_top4 numbers fully (Mirza only).
-3. Then ST-012 (database; before execution) → ST-006/007/008/009/011; ST-005 (sectors); ST-017/018 later.
-4. Prod SSH paste glitch: `echo 'set enable-bracketed-paste off' >> ~/.inputrc` (new session), or update PuTTY.
+1. **Strategy verdict (Rakesh):** review document "stratrad strategy review: ST-010 backtests 2014-2023" (Claude
+   Docs artifact, numbers after ST-019) holds the cards, comparison, Claude's recommendations and the card change list.
+   Open for Rakesh: verdict per strategy; should the Rs 1 L at-cost cap grow with realised gains (re-test, recorded)?;
+   should Test 1 see paper profits given back (ST-010.md "Still open")? Claude adds Rakesh's questions to the change list.
+2. Then ST-012 (database; before execution) → ST-006/007/008/009/011; ST-005 (sectors); ST-017/018 later.
+3. Prod SSH paste glitch: `echo 'set enable-bracketed-paste off' >> ~/.inputrc` (new session), or update PuTTY.
 
 Done 2026-10-15: ST-016 rename closed (merge `150f9da`); ST-010 resolved (merge `d6ea9f7`: engine, validator, report
-card; prod = laptop results).
+card; prod = laptop results); ST-019 demergers resolved (merge `5d9e73d`: 94 factors applied, list approved).
 Done 2026-10-14: ST-004 universe (merge `1fe1a08`, prod confirmed); ST-016 rename steps 0-8; data model approved.
 Done 2026-10-11: ST-001/002/003/013/014/015.
 

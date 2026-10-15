@@ -24,4 +24,4 @@ Workflow, status values and gates: `CLAUDE.md` → "Change workflow".
 | [ST-016](tech-debt/ST-016.md) | Rename project strategy-trader -> stratrad (repo, prod folder, share, backup, docs) | High | Resolved | 2026-10-14 | repo | — (prod confirmed 2026-10-15) |
 | [ST-017](tech-debt/ST-017.md) | Dashboards: stratrad performance dashboard (+ general market dashboard to decide) | Med | Not started | 2026-10-14 | reporting | backtest view after ST-010; live view after execution issues |
 | [ST-018](tech-debt/ST-018.md) | Enter stratrad trades into RK_Fin_DashBoard.xlsx (OneDrive) | Med | Not started | 2026-10-14 | reporting | option a (Claude on request); after ST-006/009 |
-| [ST-019](tech-debt/ST-019.md) | Demergers (spin-offs): price adjustment so a held lot keeps its value | High | Not started | 2026-10-15 | data | option a decided; after ST-010 validator (check 9 lists the cases) |
+| [ST-019](tech-debt/ST-019.md) | Demergers (spin-offs): price adjustment so a held lot keeps its value | High | Resolved | 2026-10-15 | data | — (prod confirmed 2026-10-15) |

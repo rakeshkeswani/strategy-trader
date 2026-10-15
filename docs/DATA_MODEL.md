@@ -54,8 +54,9 @@ the benchmark for every backtest and for live performance.
 | `panel/equity_daily/year=YYYY/part-0.parquet` | equity x trading day | trade_date, series_id, company_key, symbol, isin, series, open, high, low, close, prev_close, volume, traded_value | ST-004 |
 | `universe/membership.csv` | rebalance x member | cutoff_date, effective_from, rank, series_id, company_key, symbol, median_traded_value, trading_freq, close | ST-004 |
 | `reference/sectors.csv` | company x period | company_key, sector, industry, valid_from, valid_to, source | ST-005 |
-| `features/<set>/<date>.parquet` | stock x day | series_id, trade_date, feature columns | ST-010 |
-| `backtests/<run_id>/` | one run | `config.yaml`, `trades.parquet`, `equity_curve.parquet`, `metrics.json` | ST-010 |
+| `features/<set>/<date>.parquet` | stock x day | series_id, trade_date, feature columns | not written yet (ST-010 computes indicators at load, `core/indicators.py`) |
+| `backtests/<run_id>/` | one run; `<run_id>` = `<strategy>_<limits\|faithful>_<start>_<end>` | `config.json` (strategy, limits, period, data notes), `lots.csv` (one row per lot, incl. `pnl`, `pnl_pct`), `orders.csv` (fills with charges by part), `daily.csv` (cash, holdings, equity, invested_cost, tier, benchmark), `tax.csv` (per FY), `metrics.json`, `card.md` (report card) | ST-010 |
+| `backtests/compare_<start>_<end>.md` | side-by-side page of the runs carded together | Markdown | ST-010 |
 
 Rules: prices in the panel are **raw**; split/bonus adjustment is applied at read time from `history.csv` +
 `config/ca_overrides.csv`, so a corrected factor never needs a panel rebuild. Point-in-time: a row dated D uses only

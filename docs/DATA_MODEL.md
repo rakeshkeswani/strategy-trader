@@ -59,7 +59,8 @@ the benchmark for every backtest and for live performance.
 | `backtests/compare_<start>_<end>.md` | side-by-side page of the runs carded together | Markdown | ST-010 |
 
 Rules: prices in the panel are **raw**; split/bonus adjustment is applied at read time from `history.csv` +
-`config/ca_overrides.csv`, so a corrected factor never needs a panel rebuild. Point-in-time: a row dated D uses only
+`config/ca_overrides.csv`, and demerger adjustment (prices only, not volume) from `config/demergers.csv` (ST-019), so a
+corrected factor never needs a panel rebuild. Point-in-time: a row dated D uses only
 data available at D's close; sectors are dated (`valid_from`) because classifications change. Parquet (pyarrow),
 snappy compression, partitioned by year if a file grows past ~1 GB.
 

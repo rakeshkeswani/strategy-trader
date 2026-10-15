@@ -16,6 +16,7 @@ Present tense. Update when a module, entry point or call chain changes.
 | `python -m ingestion.build_price_panel [--full] [--start --end]` | price panel: `--full` rebuilds, plain run appends new days | `PANEL_DIR`, `LOG_DIR` |
 | `python -m ingestion.build_universe` | all Nifty 500-aligned reviews -> `membership.csv` (seconds) | `PANEL_DIR`, `UNIVERSE_DIR` |
 | `python -m scripts.validate_universe [--skip-coverage]` | ST-004 acceptance: coverage, no lookahead, survivorship, fidelity vs NSE list | `LOG_DIR` |
+| `python -m scripts.build_demergers [--check]` | ST-019: demerger factors from the stored CA feed + raw panel; keeps `REVIEWED` notes; checks moves around each ex-date | `config/demergers.csv`, `LOG_DIR` |
 | `python -m backtest.run --strategy NAME [--start --end --faithful]` | one backtest (ST-010); refuses to write to a share | `BACKTESTS_DIR/<run_id>/`, `LOG_DIR` |
 | `python -m scripts.validate_backtest RUN_ID [--rerun]` | ST-010 acceptance checks 1-9 on one run folder (`--rerun`: repeatable + no lookahead, 4 re-runs) | `LOG_DIR` (issues .csv + summary .json) |
 | `python -m backtest.report_card RUN_ID [RUN_ID ...]` | plain-language report card per run; 2+ runs also a comparison page | `<run folder>/card.md`, `BACKTESTS_DIR/compare_<start>_<end>.md` |
@@ -43,6 +44,8 @@ Present tense. Update when a module, entry point or call chain changes.
 | `scripts/validate_universe.py` | panel vs raw files, review rebuild with data cut at cut-off, survivorship, overlap with NSE's Nifty 500 list |
 | `ingestion/fetch_corporate_actions_history.py` | one call per year, raw JSON kept, `history.csv` written; fails on unclassified subjects |
 | `scripts/validate_corporate_actions.py` | feed re-parse, jump scan (equities), PREVCLOSE probe, yfinance spot check; reads `config/ca_exceptions.csv` |
+| `core/demergers.py` | `feed_records()` (EQ demerger/scheme records), `candidates()` (factor = prev close / ex-day close; falls > 5% applied), `merge_reviewed()`, `load_demergers()` (applied rows as actions, kind `demerger`) |
+| `core/adjusted.py` | `actions_frame()`, `series_factors()` (split + demerger factors per series; demergers price-only), `adjust()` |
 | `backtest/run.py` | `load_market(start, end, panel_hook)`, `run_backtest()` (no files), `write_outputs()`, `headline()` (Test 1 = worst rolling 12-month rupee loss at cost / stake), `pnl_at_cost()`, `lot_pnl()` |
 | `backtest/report_card.py` | reads a run folder + the latest validator summary; `fy_table()`, `rolling_ahead()`, `bootstrap_lead()` (circular 6-month blocks), `underwater()`, `card()`, `compare()` |
 | `scripts/validate_backtest.py` | checks 1-9; charges and tax re-derived from rates/rules written in the script (not `backtest/costs.py`); scrambles future raw prices via `panel_hook` for the lookahead check; reads `config/ca_exceptions.csv` |
@@ -53,6 +56,7 @@ Present tense. Update when a module, entry point or call chain changes.
 |---|---|---|
 | `config/ca_overrides.csv` | `load_history()` | VOID a feed action that did not change the equity scale / ADD a missing factor; a stale VOID raises |
 | `config/symbol_changes_extra.csv` | `load_changes()` | renames missing from NSE's list (same 4-column format) |
+| `config/demergers.csv` | `load_demergers()` | demerger factors (ST-019): every feed record with prices, factor, applied Y/N, note; `REVIEWED` notes survive a rebuild; Rakesh approves |
 | `config/ca_exceptions.csv` | validator only | explains genuine crashes (`drop`) and records capital-reduction decisions (`review`) |
 | `config/symbol_exceptions.csv` | ST-013 validator | optional; `not_rename` (a same-ISIN handover that is not a rename) / `rename_ok` (reviewed stitch). None needed 2026-10-11 |
 

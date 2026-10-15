@@ -14,7 +14,8 @@ Last updated: 2026-10-14 evening (session close: ST-004 resolved; ST-016 awaitin
       unmatched actions inside the loaded window only;
    b. ~~validator (piece 5)~~ done 2026-10-15: `scripts/validate_backtest.py`; laptop: all three PASS (warning:
       MIRZAINT demerger -> ST-019); tax beyond cash = tax owed (option b);
-   c. piece 4 report card (plain-language summary, consistency, bootstrap range, risk vs Nifty 500, costs/tax per year);
+   c. ~~piece 4 report card~~ built 2026-10-15: `backtest/report_card.py` (layout approved); changes come from Rakesh's
+      questions during the walkthrough (Claude notes them, proposes a list);
    d. prod runs (fetch_benchmark first), then walk Rakesh through the three cards (baseline; rakesh_top4 faithful and
       within limits). Preliminary numbers in `tech-debt/ST-010.md`.
    Open design question for Rakesh: under the limits, profits above the Rs 1 L at-cost cap sit idle — should the cap

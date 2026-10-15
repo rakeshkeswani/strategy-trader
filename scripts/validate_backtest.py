@@ -22,7 +22,8 @@ ST-010 piece 5 -- acceptance checks for one backtest output folder (data/backtes
 9. BIG MOVES (warning): a held stock moving more than +/-30% close to close in a day must be a known crash in
    config/ca_exceptions.csv; otherwise listed (e.g. a demerger, ST-019).
 
-Writes LOG_DIR/validate_backtest_<run_id>_<date>.csv. Exit code 0 only when RESULT: PASS (warnings allowed).
+Writes LOG_DIR/validate_backtest_<run_id>_<date>.csv (issues) and .json (result, failed, warnings, unexplained big
+moves; read by backtest/report_card.py). Exit code 0 only when RESULT: PASS (warnings allowed).
 Usage (repo root): python -m scripts.validate_backtest <run_id or folder> [--rerun]
 """
 
@@ -470,6 +471,10 @@ def main() -> int:
         w.writerow(['check', 'key', 'value1', 'value2'])
         w.writerows(issues)
     logger.info(f'{len(issues)} rows -> {out}')
+    summary = {'run_id': run_id, 'date': str(date.today()), 'result': 'FAIL' if failed else 'PASS', 'failed': failed,
+               'warnings': warnings, 'rerun': args.rerun, 'tax_owed_days': lim.get('days_tax_owed', 0),
+               'unexplained_big_moves': [f'{i[2]} {i[3]}' for i in issues if i[:2] == ('big_move', 'UNEXPLAINED')]}
+    out.with_suffix('.json').write_text(json.dumps(summary, indent=1), encoding='utf-8')
     if warnings:
         logger.warning('WARNINGS: ' + '; '.join(warnings))
     logger.info('RESULT: ' + ('FAIL -- ' + '; '.join(failed) if failed else 'PASS'))

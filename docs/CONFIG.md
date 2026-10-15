@@ -1,7 +1,7 @@
 # CONFIG.md — environments, paths, shares, settings
 
 Present tense: how things are set up NOW. Update in the same commit as any change.
-Last updated: 2026-10-14 (ST-016: project renamed strategy-trader -> stratrad; older dated rows keep the old name)
+Last updated: 2026-10-15 (ST-016 closed: backup verified on the stratrad mirror, old mirror removed; older dated rows keep the old name)
 
 ## Machines
 
@@ -91,9 +91,9 @@ always `psql -h localhost` (peer auth fails on the Unix socket).
 |---|---|
 | Mirror | `/mnt/rkfspool/daily/rkneo50q/stratrad` — FFS Job 3 (`/home/rakeshbk/ffs_jobs/job3_stratrad.ffs_batch`; logs `/home/rakeshbk/logs/ffs_jobs/job3_stratrad <timestamp>.html`). Excludes `*/.Trash-*/`, `*/.recycle/`, `/venv/`, `*/__pycache__/`, `*/.pytest_cache/`, `/.env`, `*/.env` (`.env` since 2026-10-11) |
 | Schedule | nightly 23:30, n8n "MyInvestIQ (Daily 23:30) FFS Job 2 BackUp": pg_dump → Job 2 → Job 3 (last node) |
-| Kopia | daily 01:00 snapshot of `/mnt/rkfspool/daily` (repo `/mnt/rkfspool/backup`; retention 30 daily / 52 weekly / 24 monthly / 2 annual). First snapshot with strategy-trader: 2026-10-11 01:00 |
+| Kopia | daily 01:00 snapshot of `/mnt/rkfspool/daily` (repo `/mnt/rkfspool/backup`; retention 30 daily / 52 weekly / 24 monthly / 2 annual). First snapshot with strategy-trader: 2026-10-11 01:00; first with `rkneo50q/stratrad`: `k13eb1c5` 2026-10-15 01:00 |
 | Freshness alert | `/usr/local/bin/homelab-health.sh` daily check 4: newest `job3_stratrad *.html` log <= 48 h old and "Completed successfully" (since 2026-10-11; renamed 2026-10-14) |
-| Verified | 2026-10-14 by the homelab project after the ST-016 rename: manual Job 3 run completed (4,007 items, 569 MB); mirror complete (3,792 files, 568,613,234 bytes both sides, 0 differences); exclusions hold; n8n Job 3 node runs `job3_stratrad.ffs_batch`. **Open (2026-10-15):** Kopia 01:00 snapshot contains `rkneo50q/stratrad`; restore `data/corporate_actions/history.csv` SHA-256 match; then the old mirror `rkneo50q/strategy-trader` is removed |
+| Verified | 2026-10-14 by the homelab project after the ST-016 rename: manual Job 3 run completed (4,007 items, 569 MB); mirror complete (3,792 files, 568,613,234 bytes both sides, 0 differences); exclusions hold; n8n Job 3 node runs `job3_stratrad.ffs_batch`. 2026-10-15: first scheduled Job 3 run 2026-10-14 23:31 completed; Kopia `k13eb1c5` (01:00) contains `rkneo50q/stratrad` with all data folders incl. `panel`, `universe`; restore of `data/corporate_actions/history.csv` SHA-256 `5430459e…9bf26670` = live file (Claude re-checked via X:); 02:30 health run ok, check 4 PASS. Old mirror `rkneo50q/strategy-trader` (551 MB) removed 2026-10-15 10:52 IST (still in earlier snapshots). Checks 1-5 and 7 all PASS on the new path |
 
 FFS rule (homelab, 2026-10-14): batch files cancel on any warning, so a new FFS target folder must exist before the
 job's first run (the first manual stratrad run stopped until the folder was created).

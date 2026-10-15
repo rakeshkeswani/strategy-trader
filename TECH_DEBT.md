@@ -21,6 +21,6 @@ Workflow, status values and gates: `CLAUDE.md` → "Change workflow".
 | [ST-013](tech-debt/ST-013.md) | Symbol changes: stitch price series across renames | High | Resolved | 2026-10-08 | data | — (prod confirmed 2026-10-11, merge `c8a2c77`) |
 | [ST-014](tech-debt/ST-014.md) | Workflow + docs (MyInvestIQ-style), own prod folder + X: share | High | Resolved | 2026-10-08 | repo | — (prod confirmed 2026-10-11) |
 | [ST-015](tech-debt/ST-015.md) | Housekeeping: .gitattributes, git command conventions, sign-offs | Med | Resolved | 2026-10-11 | repo | — (prod confirmed 2026-10-11, merge `1a66fc2`) |
-| [ST-016](tech-debt/ST-016.md) | Rename project strategy-trader -> stratrad (repo, prod folder, share, backup, docs) | High | In progress — branch st/ST-016-rename | 2026-10-14 | repo | all steps done; 15 Oct: homelab Kopia + restore checks, delete temp backups, Rakesh sign-off |
+| [ST-016](tech-debt/ST-016.md) | Rename project strategy-trader -> stratrad (repo, prod folder, share, backup, docs) | High | Resolved | 2026-10-14 | repo | — (prod confirmed 2026-10-15) |
 | [ST-017](tech-debt/ST-017.md) | Dashboards: stratrad performance dashboard (+ general market dashboard to decide) | Med | Not started | 2026-10-14 | reporting | backtest view after ST-010; live view after execution issues |
 | [ST-018](tech-debt/ST-018.md) | Enter stratrad trades into RK_Fin_DashBoard.xlsx (OneDrive) | Med | Not started | 2026-10-14 | reporting | option a (Claude on request); after ST-006/009 |

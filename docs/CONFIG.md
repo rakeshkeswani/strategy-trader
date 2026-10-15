@@ -68,6 +68,7 @@ Fetchers refuse to write to a `//host/...` path, so Windows can never write into
 | `SYMBOL_CHANGES_DIR` | `<repo>/data/symbol_changes` | default | `fetch_symbol_changes`, `core/symbol_changes.py` |
 | `PANEL_DIR` | `<repo>/data/panel` | default | `build_price_panel`, `core/panel.py` |
 | `UNIVERSE_DIR` | `<repo>/data/universe` | default | `build_universe`, `core/universe.py` |
+| `BENCHMARK_DIR` | `<repo>/data/benchmark` | default | `fetch_benchmark` (Nifty 500 index, `nifty500.csv`) |
 | `TRENDLYNE_DROP_DIR`, `KITE_*`, `DB_*`, `TELEGRAM_*`, `ANTHROPIC_API_KEY` | — | not yet set | later STs |
 
 Windows dev reading prod data: set `BHAVCOPY_ARCHIVE_DIR=//100.103.189.15/myinvestiq/data/bhavcopy`,
@@ -110,6 +111,7 @@ None yet. (n8n at http://192.168.0.250:5678 runs MyInvestIQ only.)
 | 2026-10-08 | Legacy bhavcopy 2014-01-01..2024-07-05 + 7 weekend sessions | `python -m ingestion.fetch_legacy_bhavcopy` |
 | 2026-10-08 | UDiFF 2024-01-01..2025-08-27 fetched with MyInvestIQ's fetcher, then moved out of its archive and its manifest rows removed (backup `manifest.csv.bak_<time>` in MyInvestIQ's archive) | `scripts/relocate_udiff_gap.py --go` (paths in it are now historical) |
 | 2026-10-08 | Both data folders moved from `myinvestiq/data/` to `strategy-trader/data/`; X: share added | manual `mv`, smb.conf edit |
+| 2026-10-14 | Universe: 25 Nifty 500-aligned reviews (cut-offs 2014-07-31..2026-07-31), 12,500 rows, `data/universe/membership.csv` 1.1 MB, 11 s; validator PASS | `python -m ingestion.build_universe` (re-run after each new cut-off or a panel rebuild) |
 | 2026-10-14 | Price panel 2014-01-01..2026-10-13: 5,399,886 rows, 3,156 trading days, 3,127 companies, 3,136 series, 165.4 MB, built in 59 s | `python -m ingestion.build_price_panel --full` (re-run after a reader fix or a new rename; plain run appends new days) |
 | 2026-10-11 | NSE symbol-change snapshot (1,056 renames, newest 2026-09-25) | `python -m ingestion.fetch_symbol_changes` (re-run only to refresh; keeps the previous snapshot) |
 | 2026-10-11 | Corporate-actions history 2014..2025-08-25: raw/2014..2025.json + history.csv (805 rows) | `python -m ingestion.fetch_corporate_actions_history` (re-run reuses raw/; `--force` re-fetches) |

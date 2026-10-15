@@ -1,36 +1,30 @@
 # TODO.md — open items and resume point
 
 Read at session start (after `TECH_DEBT.md` and the tail of `SESSION_LOG.md`). Tick/remove as done.
-Last updated: 2026-10-11 evening (session close: ST-001/002/003/013/014/015 resolved; ST-004 waiting on the data model).
+Last updated: 2026-10-14 evening (session close: ST-004 resolved; ST-016 awaiting homelab checks; ST-010 pieces 1-3 done).
 
 ## Resume here (new conversation)
-1. **Rakesh: review and approve `docs/DATA_MODEL.md`** (proposal, commit `fa316fb`). Two stores (research files /
-   operational Postgres), shared identifiers (company_key, series_id, symbol, isin, trade_date), research file
-   schemas, 12 Postgres tables. ST-004 code waits on it.
-2. **ST-004 point-in-time universe** — branch `st/ST-004-universe` (open). Design in `tech-debt/ST-004.md` (Nifty 500
-   review alignment: cut-off last trading day Jan/Jul, 6 months, >= 90% trading days, effective April/October;
-   rank by median traded value; overlap threshold agreed after measuring). First step: `ingestion/build_price_panel.py`
-   (Parquet). pyarrow 26.0.0 installed on prod venv and laptop (2026-10-11); pandas 3.0.6 prod / 3.0.1 laptop.
-   Uncommitted on the branch: `requirements.txt` (+pandas, +pyarrow) — commit with the panel builder.
-3. Then ST-010 (baseline momentum backtest) → ST-012 (database; before any execution issue) → ST-006/007/008/009/011.
-4. Prod SSH paste glitch: `^[[200~` breaks the first/last pasted line. Fix once on prod:
-   `echo 'set enable-bracketed-paste off' >> ~/.inputrc` (new session), or update PuTTY.
-2a. ~~Backup record~~ — recorded in `docs/CONFIG.md` "Backup" 2026-10-11 (homelab verified 8 checks).
-   Done 2026-10-11: `.env` excluded and mirrored copy removed; freshness check 4 in `homelab-health.sh`; mirror
-   complete. **Still open (homelab owns, 2026-10-12):** Kopia 01:00 snapshot contains all four data folders and a
-   `history.csv` restore matches SHA-256. Record the result in CONFIG.md "Backup" when Rakesh reports it.
-3. ~~Backup (homelab project)~~ — done 2026-10-11 (FFS Job 3). Original handover kept for reference:
-   > Add strategy-trader to the backup chain on RKNeo50Q. Source `/home/rakeshbk/strategy-trader` (code on GitHub;
-   > `data/` = one-time NSE downloads 2014–2025, ~300 MB, hard to replace; since 2026-10-11 also
-   > `data/corporate_actions/` and `data/symbol_changes/`, small and re-fetchable). Exclude `venv/`, `__pycache__/`,
-   > `.pytest_cache/`. Destination `/mnt/rkfspool/daily/rkneo50q/strategy-trader/` so the 01:00 Kopia snapshot
-   > covers it. Suggested trigger: existing 23:30 n8n workflow after FFS Job 2 (FFS Job 3 or rsync — homelab's
-   > call). Caution: `/mnt/rkfspool/daily` is the read-write rkfspool share; `.env` will later hold Kite keys —
-   > plan to exclude `.env` from the mirror and back it up another way. Add a daily freshness check for the mirror
-   > to `homelab-health.sh`. The map already has the strategy-trader service and a "NOT YET IN THE BACKUP CHAIN"
-   > note (`patch_2026_10_08.py`); update backup line, schedules, pool folders once verified.
-Done 2026-10-11: ST-015 (merge `1a66fc2`), ST-003 corporate actions (merge `bf2f689`), ST-013 rename stitching
-(merge `c8a2c77`) — all prod confirmed.
+1. ~~**ST-016 rename — close it.**~~ Done 2026-10-15 (merge `150f9da`). Homelab reports Kopia check 4 (15 Oct 01:00 snapshot contains `rkneo50q/stratrad`)
+   and restore check 5 (`data/corporate_actions/history.csv`, SHA-256), then removes the old mirror. Then Rakesh deletes
+   `~/env_backup_st016_20261014` and `/etc/samba/smb.conf.pre_st016_20261014` on prod (Claude gives the block), git pull
+   on prod, sign-off. Record in CONFIG.md "Backup".
+2. **ST-010 baseline backtest** — branch `st/ST-010-baseline` (open, last commit `ac666fb`). Pieces 1-3 done (adjusted
+   prices, indicators + benchmark, engine + runner, both strategies). Next:
+   a. ~~headline fix~~ done 2026-10-15: Test 1 = worst rolling 12-month rupee loss at cost / stake (ST-010.md);
+      unmatched actions inside the loaded window only;
+   b. ~~validator (piece 5)~~ done 2026-10-15: `scripts/validate_backtest.py`; laptop: all three PASS (warning:
+      MIRZAINT demerger -> ST-019); tax beyond cash = tax owed (option b);
+   c. ~~piece 4 report card~~ built 2026-10-15: `backtest/report_card.py` (layout approved); changes come from Rakesh's
+      questions during the walkthrough (Claude notes them, proposes a list);
+   d. prod runs (fetch_benchmark first), then walk Rakesh through the three cards (baseline; rakesh_top4 faithful and
+      within limits). Preliminary numbers in `tech-debt/ST-010.md`.
+   Open design question for Rakesh: under the limits, profits above the Rs 1 L at-cost cap sit idle — should the cap
+   grow with realised gains?
+3. Then ST-012 (database; before execution) → ST-006/007/008/009/011; ST-005 (sectors); ST-017/018 later.
+4. Prod SSH paste glitch: `echo 'set enable-bracketed-paste off' >> ~/.inputrc` (new session), or update PuTTY.
+
+Done 2026-10-14: ST-004 universe (merge `1fe1a08`, prod confirmed); ST-016 rename steps 0-8; data model approved.
+Done 2026-10-11: ST-001/002/003/013/014/015.
 
 ## Rakesh — outside this repo
 - [x] MyInvestIQ prod includes `98255d6` (prod HEAD `47c82fb`, pulled 2026-10-10)

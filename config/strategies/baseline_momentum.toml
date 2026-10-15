@@ -1,0 +1,22 @@
+# ST-010 baseline (plan doc example; Rakesh approved 2026-10-14). Read by backtest/engine.py.
+name = "baseline_momentum"
+description = "Top by 6-month return, close above the 200-day average, RSI(14) 50-70; 8% initial + 8% trailing stop per lot; exit after 12 months"
+
+[signal]
+rank_by = "ret_126"          # 6-month return (126 trading days)
+top_n = 0                    # 0 = keep buying down the ranked list until the week's budget is used
+above_sma = 200              # close must be above the 200-day average
+rsi_min = 50
+rsi_max = 70
+weights = "equal"
+
+[sizing]
+weekly_budget = 10000
+risk_per_trade = 1000        # lot <= risk / stop distance
+min_lot = 1000
+
+[exit]
+mode = "lot_stop"
+initial_stop = 0.08
+trailing_stop = 0.08         # below the highest close since entry
+time_exit_months = 12        # exit on the first trading day after more than 12 months

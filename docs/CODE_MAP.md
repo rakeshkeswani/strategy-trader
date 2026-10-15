@@ -16,6 +16,9 @@ Present tense. Update when a module, entry point or call chain changes.
 | `python -m ingestion.build_price_panel [--full] [--start --end]` | price panel: `--full` rebuilds, plain run appends new days | `PANEL_DIR`, `LOG_DIR` |
 | `python -m ingestion.build_universe` | all Nifty 500-aligned reviews -> `membership.csv` (seconds) | `PANEL_DIR`, `UNIVERSE_DIR` |
 | `python -m scripts.validate_universe [--skip-coverage]` | ST-004 acceptance: coverage, no lookahead, survivorship, fidelity vs NSE list | `LOG_DIR` |
+| `python -m backtest.run --strategy NAME [--start --end --faithful]` | one backtest (ST-010); refuses to write to a share | `BACKTESTS_DIR/<run_id>/`, `LOG_DIR` |
+| `python -m scripts.validate_backtest RUN_ID [--rerun]` | ST-010 acceptance checks 1-9 on one run folder (`--rerun`: repeatable + no lookahead, 4 re-runs) | `LOG_DIR` (issues .csv + summary .json) |
+| `python -m backtest.report_card RUN_ID [RUN_ID ...]` | plain-language report card per run; 2+ runs also a comparison page | `<run folder>/card.md`, `BACKTESTS_DIR/compare_<start>_<end>.md` |
 | `python -m pytest -q tests` | unit tests (no network) | — |
 
 ## Modules
@@ -40,6 +43,9 @@ Present tense. Update when a module, entry point or call chain changes.
 | `scripts/validate_universe.py` | panel vs raw files, review rebuild with data cut at cut-off, survivorship, overlap with NSE's Nifty 500 list |
 | `ingestion/fetch_corporate_actions_history.py` | one call per year, raw JSON kept, `history.csv` written; fails on unclassified subjects |
 | `scripts/validate_corporate_actions.py` | feed re-parse, jump scan (equities), PREVCLOSE probe, yfinance spot check; reads `config/ca_exceptions.csv` |
+| `backtest/run.py` | `load_market(start, end, panel_hook)`, `run_backtest()` (no files), `write_outputs()`, `headline()` (Test 1 = worst rolling 12-month rupee loss at cost / stake), `pnl_at_cost()`, `lot_pnl()` |
+| `backtest/report_card.py` | reads a run folder + the latest validator summary; `fy_table()`, `rolling_ahead()`, `bootstrap_lead()` (circular 6-month blocks), `underwater()`, `card()`, `compare()` |
+| `scripts/validate_backtest.py` | checks 1-9; charges and tax re-derived from rates/rules written in the script (not `backtest/costs.py`); scrambles future raw prices via `panel_hook` for the lookahead check; reads `config/ca_exceptions.csv` |
 
 ## Curated config files (in git, every row has a reason)
 

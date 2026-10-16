@@ -93,6 +93,7 @@ PostgreSQL 16 on rkneo50q (localhost:5432, server timezone IST), shared with MyI
 | Database | `stratrad`, owner `stratrad_app` (ST-012); schema only through `database/migrations/NNN_*.sql` + `python -m scripts.migrate` |
 | Roles | `stratrad_app` (owner, live system, migrations); `stratrad_reader` (SELECT only); `stratrad_ro` on `portfolio_watch` (SELECT on `corporate_actions`, `fii_daily_flow` only). All sessions UTC. Created by `database/setup_roles.sql` (superuser, once); passwords set with `\password`, kept only in prod `.env` |
 | Checks | `python -m scripts.check_database` (every permission tested by attempting it) |
+| Dev (laptop) | same layout inside MyInvestIQ's dev Docker container `portfolio-watch-db` (postgres:16, localhost:5432, superuser `portfolio_user`; timezone UTC): database `stratrad` + the same three roles, created with `database/setup_roles.sql` via `docker exec -i portfolio-watch-db psql -U portfolio_user -d postgres`; dev-only passwords in the laptop `.env`. Migrations run on dev first, then prod. Holds operational test data only; research data stays the single prod copy, read over the share |
 | MyInvestIQ | `portfolio_watch`, user `portfolio_rk`; always `psql -h localhost` (peer auth fails on the Unix socket) |
 
 ## Backup (owned by the homelab project)
@@ -100,15 +101,22 @@ PostgreSQL 16 on rkneo50q (localhost:5432, server timezone IST), shared with MyI
 | | |
 |---|---|
 | Mirror | `/mnt/rkfspool/daily/rkneo50q/stratrad` — FFS Job 3 (`/home/rakeshbk/ffs_jobs/job3_stratrad.ffs_batch`; logs `/home/rakeshbk/logs/ffs_jobs/job3_stratrad <timestamp>.html`). Excludes `*/.Trash-*/`, `*/.recycle/`, `/venv/`, `*/__pycache__/`, `*/.pytest_cache/`, `/.env`, `*/.env` (`.env` since 2026-10-11) |
-| Schedule | nightly 23:30, n8n "MyInvestIQ (Daily 23:30) FFS Job 2 BackUp": pg_dump → Job 2 → Job 3 (last node) |
+| Schedule | nightly 23:30, n8n "MyInvestIQ (Daily 23:30) FFS Job 2 BackUp": pgdump portfolio_watch → FFS Job 2 → pgdump stratrad DBase → FFS Job 3 → `Dumps OK?` (exit codes of both dumps; false → Stop and Error, run turns red). n8n's SSH node never fails on a non-zero exit, hence the If node (homelab, 2026-10-16) |
+| Database dump | `stratrad` (ST-012, since 2026-10-16): `/home/rakeshbk/homelab/stratrad-dump/stratrad_dump.sh` → `pg_dump -Fc` to `data/db_backups/stratrad_YYYYMMDD.dump.part`, checked non-empty and readable by `pg_restore --list`, renamed; newest 14 kept; on failure the `.part` is deleted and the script exits non-zero. Auth `~/.pgpass` (stratrad_app; no password in n8n). pg_dump/pg_restore 16.15 = server. Reaches the mirror and Kopia via Job 3 (`data/db_backups` not excluded) |
 | Kopia | daily 01:00 snapshot of `/mnt/rkfspool/daily` (repo `/mnt/rkfspool/backup`; retention 30 daily / 52 weekly / 24 monthly / 2 annual). First snapshot with strategy-trader: 2026-10-11 01:00; first with `rkneo50q/stratrad`: `k13eb1c5` 2026-10-15 01:00 |
-| Freshness alert | `/usr/local/bin/homelab-health.sh` daily check 4: newest `job3_stratrad *.html` log <= 48 h old and "Completed successfully" (since 2026-10-11; renamed 2026-10-14) |
+| Freshness alert | `/usr/local/bin/homelab-health.sh` daily (02:30): check 4 newest `job3_stratrad *.html` log <= 48 h old and "Completed successfully" (since 2026-10-11; renamed 2026-10-14); check 5 newest `stratrad_*.dump` <= 26 h old and >= 1 KB (since 2026-10-16; 26 h like portfolio_watch, so one missed night alerts) |
 | Verified | 2026-10-14 by the homelab project after the ST-016 rename: manual Job 3 run completed (4,007 items, 569 MB); mirror complete (3,792 files, 568,613,234 bytes both sides, 0 differences); exclusions hold; n8n Job 3 node runs `job3_stratrad.ffs_batch`. 2026-10-15: first scheduled Job 3 run 2026-10-14 23:31 completed; Kopia `k13eb1c5` (01:00) contains `rkneo50q/stratrad` with all data folders incl. `panel`, `universe`; restore of `data/corporate_actions/history.csv` SHA-256 `5430459e…9bf26670` = live file (Claude re-checked via X:); 02:30 health run ok, check 4 PASS. Old mirror `rkneo50q/strategy-trader` (551 MB) removed 2026-10-15 10:52 IST (still in earlier snapshots). Checks 1-5 and 7 all PASS on the new path |
 
 FFS rule (homelab, 2026-10-14): batch files cancel on any warning, so a new FFS target folder must exist before the
 job's first run (the first manual stratrad run stopped until the folder was created).
 
 `.env` must never reach the mirror once it holds Kite keys (ST-006). The mirror is plain text on the `Y:` share.
+`.env` is also hidden on the stratrad Samba share (`veto files = /.env/` on `[stratrad]`, 2026-10-16; `X:\.env` is
+refused): check prod `.env` from a prod shell, masked.
+
+Database dump verified 2026-10-16 (by hand): `stratrad_20261016.dump` 55,393 bytes at 12:57:39 IST, `pg_restore
+--list` = 15 tables incl. `audit_log`, `schema_migrations`; failure test (missing database) exit 1, no `.part` left.
+Pending: the first scheduled run (23:30 dump, 01:00 Kopia, 02:30 check 5).
 
 ## Scheduled jobs
 

@@ -53,3 +53,11 @@ UNIVERSE_DIR = _dir_from_env('UNIVERSE_DIR', REPO_ROOT / 'data' / 'universe')
 # ST-010: benchmark index history (nifty500.csv) written by ingestion/fetch_benchmark.py.
 # Prod: default (<repo>/data/benchmark).
 BENCHMARK_DIR = _dir_from_env('BENCHMARK_DIR', REPO_ROOT / 'data' / 'benchmark')
+
+# ST-012: PostgreSQL connection strings (libpq URLs, passwords included -- prod .env only, never in git).
+# STRATRAD_DB_URL     postgresql://stratrad_app:...@localhost:5432/stratrad      (owner: the live system, migrations)
+# STRATRAD_READER_URL postgresql://stratrad_reader:...@localhost:5432/stratrad   (read-only reporting)
+# MYINVESTIQ_RO_URL   postgresql://stratrad_ro:...@localhost:5432/portfolio_watch (corporate_actions, fii_daily_flow)
+STRATRAD_DB_URL = (os.getenv('STRATRAD_DB_URL') or '').strip()
+STRATRAD_READER_URL = (os.getenv('STRATRAD_READER_URL') or '').strip()
+MYINVESTIQ_RO_URL = (os.getenv('MYINVESTIQ_RO_URL') or '').strip()

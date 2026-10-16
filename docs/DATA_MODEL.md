@@ -138,7 +138,12 @@ Guardrails run twice: **#1 before proposing**, so Rakesh is never asked to appro
 **#2 just before placing the order**, because limits can move between approval and order (other fills, a loss
 tier change).
 
-## 6. Open for ST-012
-Exact column types and constraints, indexes, roles' exact grants, retention of raw broker payloads, and whether
-research outputs the live run needs (the current universe, sectors, the latest features) are read from files or
-loaded into the database each morning.
+## 6. Settled in ST-012 (Rakesh, 2026-10-15)
+- Column types, constraints and indexes: `database/migrations/001_initial_schema.sql` (all 14 tables at once).
+  Beyond the conventions: Kite's `avg_price` and per-order charge components keep 4 decimals, adjustment factors 8;
+  `audit_log` is append-only by trigger (owner included).
+- Grants: `stratrad_app` owns everything; `stratrad_reader` SELECT on all tables (default privileges cover later
+  tables); `stratrad_ro` SELECT on `portfolio_watch.corporate_actions` and `fii_daily_flow` only.
+- Raw broker payloads (`jsonb`) are kept indefinitely (< 10 MB a year).
+- Research outputs the live run needs (universe, sectors, features) are read from files, never loaded into the
+  database.

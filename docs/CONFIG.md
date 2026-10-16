@@ -70,7 +70,10 @@ Fetchers refuse to write to a `//host/...` path, so Windows can never write into
 | `UNIVERSE_DIR` | `<repo>/data/universe` | default | `build_universe`, `core/universe.py` |
 | `BENCHMARK_DIR` | `<repo>/data/benchmark` | default | `fetch_benchmark` (Nifty 500 index, `nifty500.csv`) |
 | `BACKTESTS_DIR` | `<repo>/data/backtests` | default | `backtest/run.py` (writes; refuses a `//` share), `report_card`, `validate_backtest` |
-| `TRENDLYNE_DROP_DIR`, `KITE_*`, `DB_*`, `TELEGRAM_*`, `ANTHROPIC_API_KEY` | — | not yet set | later STs |
+| `STRATRAD_DB_URL` | — (required for DB scripts) | `postgresql://stratrad_app:<pw>@localhost:5432/stratrad` | `core/db.py` `connect('app')`, `migrate`, `check_database` |
+| `STRATRAD_READER_URL` | — | `postgresql://stratrad_reader:<pw>@localhost:5432/stratrad` | `connect('reader')`, `check_database` |
+| `MYINVESTIQ_RO_URL` | — | `postgresql://stratrad_ro:<pw>@localhost:5432/portfolio_watch` | `connect('myinvestiq')` (ST-020), `check_database` |
+| `TRENDLYNE_DROP_DIR`, `KITE_*`, `TELEGRAM_*`, `ANTHROPIC_API_KEY` | — | not yet set | later STs |
 
 Windows dev reading prod data: set `BHAVCOPY_ARCHIVE_DIR=//100.103.189.15/myinvestiq/data/bhavcopy`,
 `LEGACY_BHAVCOPY_DIR=//100.103.189.15/stratrad/data/bhavcopy_legacy`,
@@ -83,8 +86,14 @@ Windows dev reading prod data: set `BHAVCOPY_ARCHIVE_DIR=//100.103.189.15/myinve
 
 ## Database
 
-Not yet created (ST-012). MyInvestIQ prod DB: PostgreSQL 16, `portfolio_watch`, user `portfolio_rk`;
-always `psql -h localhost` (peer auth fails on the Unix socket).
+PostgreSQL 16 on rkneo50q (localhost:5432, server timezone IST), shared with MyInvestIQ; separate databases.
+
+| | |
+|---|---|
+| Database | `stratrad`, owner `stratrad_app` (ST-012); schema only through `database/migrations/NNN_*.sql` + `python -m scripts.migrate` |
+| Roles | `stratrad_app` (owner, live system, migrations); `stratrad_reader` (SELECT only); `stratrad_ro` on `portfolio_watch` (SELECT on `corporate_actions`, `fii_daily_flow` only). All sessions UTC. Created by `database/setup_roles.sql` (superuser, once); passwords set with `\password`, kept only in prod `.env` |
+| Checks | `python -m scripts.check_database` (every permission tested by attempting it) |
+| MyInvestIQ | `portfolio_watch`, user `portfolio_rk`; always `psql -h localhost` (peer auth fails on the Unix socket) |
 
 ## Backup (owned by the homelab project)
 

@@ -76,6 +76,7 @@ Fetchers refuse to write to a `//host/...` path, so Windows can never write into
 | `KITE_API_KEY`, `KITE_API_SECRET` | — (prod only) | stratrad's own Kite Connect app (Personal, free) | `core/kite.py`; never printed or logged |
 | `KITE_SESSION_FILE` | `~/.stratrad/kite_session.json` | default | the day's session (mode 600, folder 700; outside the repo and the backup mirror; expires 06:00 IST) |
 | `KITE_CALLBACK_PORT` | `8765` | default | `execution/kite_callback.py` (127.0.0.1 only) |
+| `KITE_ACCESS_TEAM`, `KITE_ACCESS_AUD` | — (callback refuses everything without them) | `soft-cake-51bb.cloudflareaccess.com`; the AUD tag of Access app "stratrad Kite callback" (not secrets) | `kite_callback` verifies each Access JWT against them |
 | `TRENDLYNE_DROP_DIR`, `TELEGRAM_*`, `ANTHROPIC_API_KEY` | — | not yet set | later STs |
 
 Windows dev reading prod data: set `BHAVCOPY_ARCHIVE_DIR=//100.103.189.15/myinvestiq/data/bhavcopy`,
@@ -127,7 +128,7 @@ Pending: the first scheduled run (23:30 dump, 01:00 Kopia, 02:30 check 5).
 |---|---|
 | App | stratrad's own Kite Connect **Personal** app (free; orders, GTT, portfolio; no market data). The older Personal app "Zerodha Integration" (2025-08-18) is left untouched |
 | Daily login | manual: Rakesh opens the bookmarked login link (`https://kite.zerodha.com/connect/login?v=3&api_key=<KITE_API_KEY>`), password + TOTP. Not automated (regulation's intent; his daily "trade today"). No login = no trading that day |
-| Redirect URL | `https://kite.myinvestiq.ai/kite/callback` -> Cloudflare tunnel -> `127.0.0.1:8765` on rkneo50q; Cloudflare Access allows only `rakeshbk@gmail.com`; the callback also refuses requests without the `Cf-Access-Jwt-Assertion` header |
+| Redirect URL | `https://kite.myinvestiq.ai/kite/callback` -> Cloudflare tunnel -> `127.0.0.1:8765` on rkneo50q; tunnel rule host `kite.myinvestiq.ai`, path `^/kite/callback$` only (other paths 404 at the tunnel); Cloudflare Access app "stratrad Kite callback" (policy "Allow rakeshbk only": `rakeshbk@gmail.com`, one-time PIN, 1-month session); the callback verifies the `Cf-Access-Jwt-Assertion` JWT (RS256 against the team's keys, audience = AUD tag, issuer = team, expiry) and fails closed (503 when the keys are unreachable or the settings missing). Homelab: tunnel config `/etc/cloudflared/config.yml` (2026-10-16) |
 | Service | systemd `stratrad-kite-callback` (`deploy/systemd/stratrad-kite-callback.service`, user rakeshbk, restart on failure); log `LOG_DIR/kite_callback.log` (never the query string or a token) |
 | Session | `KITE_SESSION_FILE`; refused by `core/kite.py` once issued before the most recent 06:00 IST; each login -> `audit_log` (`kite_login`, masked user, no token) |
 | Check | `python -m scripts.kite_check` (read-only: masked user, equity funds, holdings count) |

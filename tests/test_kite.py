@@ -5,10 +5,12 @@ Kite and the database are stubbed; nothing goes over the network."""
 import hashlib
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+import jwt
 import pytest
+from cryptography.hazmat.primitives.asymmetric import rsa
 
 from core import kite
 from core.kite import IST, Client, KiteError, LoginNeeded, Session, exchange_token, is_fresh, last_expiry, load_session
@@ -101,6 +103,7 @@ def test_no_order_endpoints_in_st006_code():
 # ---- callback ------------------------------------------------------------------------------------------------------
 ACCESS = {'Cf-Access-Jwt-Assertion': 'jwt'}
 OK_PATH = f'/kite/callback?action=login&type=login&status=success&request_token={REQ}'
+PASS = lambda token: {}            # noqa: E731 -- a verifier that accepts (JWT checks are tested separately below)
 
 
 def fake_exchange(req):
@@ -111,7 +114,7 @@ def fake_exchange(req):
 def test_callback_success_saves_audits_and_hides_token(caplog):
     saved, audited = [], []
     with caplog.at_level(logging.INFO):
-        status, body = kite_callback.handle(OK_PATH, ACCESS, exchange=fake_exchange, save=saved.append,
+        status, body = kite_callback.handle(OK_PATH, ACCESS, verify=PASS, exchange=fake_exchange, save=saved.append,
                                             write_audit=lambda a, d: audited.append((a, d)))
     assert status == 200 and b'Logged in' in body and b'Sat 17 Oct 06:00' in body
     assert saved[0].access_token == TOKEN
@@ -122,21 +125,22 @@ def test_callback_success_saves_audits_and_hides_token(caplog):
 
 def test_callback_refuses_without_access_header():
     called = []
-    status, _ = kite_callback.handle(OK_PATH, {}, exchange=lambda r: called.append(r), save=None, write_audit=None)
+    status, _ = kite_callback.handle(OK_PATH, {}, verify=PASS, exchange=lambda r: called.append(r), save=None,
+                                     write_audit=None)
     assert status == 403 and not called
 
 
 @pytest.mark.parametrize('path, want', [('/other', 404), ('/kite/callback?status=cancelled', 400),
                                         ('/kite/callback?status=success', 400)])
 def test_callback_rejects_wrong_path_or_unsuccessful_login(path, want):
-    assert kite_callback.handle(path, ACCESS, exchange=None, save=None, write_audit=None)[0] == want
+    assert kite_callback.handle(path, ACCESS, verify=PASS, exchange=None, save=None, write_audit=None)[0] == want
 
 
 def test_callback_kite_error_is_502_and_saves_nothing(caplog):
     def bad(req):
         raise KiteError('HTTP 403 TokenException: Token is invalid or has expired.')
     saved = []
-    status, body = kite_callback.handle(OK_PATH, ACCESS, exchange=bad, save=saved.append, write_audit=None)
+    status, body = kite_callback.handle(OK_PATH, ACCESS, verify=PASS, exchange=bad, save=saved.append, write_audit=None)
     assert status == 502 and not saved and REQ not in caplog.text + body.decode()
 
 
@@ -144,8 +148,54 @@ def test_callback_keeps_login_when_audit_fails():
     def boom(a, d):
         raise RuntimeError('db down')
     saved = []
-    status, body = kite_callback.handle(OK_PATH, ACCESS, exchange=fake_exchange, save=saved.append, write_audit=boom)
+    status, body = kite_callback.handle(OK_PATH, ACCESS, verify=PASS, exchange=fake_exchange, save=saved.append,
+                                        write_audit=boom)
     assert status == 200 and saved and b'audit log write failed' in body
+
+
+# ---- Cloudflare Access JWT ----------------------------------------------------------------------------------------
+TEAM, AUD = 'team.cloudflareaccess.com', 'aud-tag-123'
+KEY = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+OTHER_KEY = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+
+
+class FakeJwks:
+    """Stands in for PyJWKClient: always returns KEY's public half (or raises `error`)."""
+    def __init__(self, error=None):
+        self.error = error
+
+    def get_signing_key_from_jwt(self, token):
+        if self.error:
+            raise self.error
+        return type('K', (), {'key': KEY.public_key()})()
+
+
+def token(key=KEY, aud=AUD, iss=f'https://{TEAM}', exp_minutes=10):
+    now = datetime.now(timezone.utc)
+    return jwt.encode({'aud': [aud], 'iss': iss, 'iat': now, 'exp': now + timedelta(minutes=exp_minutes),
+                       'email': 'rakeshbk@gmail.com'}, key, algorithm='RS256', headers={'kid': 'k1'})
+
+
+def run(tok, verifier):
+    return kite_callback.handle(OK_PATH, {'Cf-Access-Jwt-Assertion': tok}, verify=verifier, exchange=fake_exchange,
+                                save=lambda s: None, write_audit=lambda a, d: None)[0]
+
+
+def test_valid_access_jwt_is_accepted():
+    assert run(token(), kite_callback.AccessVerifier(TEAM, AUD, jwks=FakeJwks())) == 200
+
+
+@pytest.mark.parametrize('tok', [token(aud='another-app'), token(iss='https://evil.cloudflareaccess.com'),
+                                 token(exp_minutes=-5), token(key=OTHER_KEY), 'not-a-jwt'])
+def test_invalid_access_jwt_is_403(tok):
+    """Wrong audience, wrong issuer, expired, signed by a foreign key, or garbage: refused."""
+    assert run(tok, kite_callback.AccessVerifier(TEAM, AUD, jwks=FakeJwks())) == 403
+
+
+def test_unreachable_keys_and_missing_config_fail_closed():
+    down = FakeJwks(error=jwt.PyJWKClientConnectionError('timeout'))
+    assert run(token(), kite_callback.AccessVerifier(TEAM, AUD, jwks=down)) == 503
+    assert run(token(), kite_callback.AccessVerifier('', '')) == 503
 
 
 def test_server_log_line_drops_the_query():

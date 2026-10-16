@@ -68,3 +68,7 @@ KITE_API_KEY = (os.getenv('KITE_API_KEY') or '').strip()
 KITE_API_SECRET = (os.getenv('KITE_API_SECRET') or '').strip()
 KITE_SESSION_FILE = Path(os.getenv('KITE_SESSION_FILE') or (Path.home() / '.stratrad' / 'kite_session.json'))
 KITE_CALLBACK_PORT = int(os.getenv('KITE_CALLBACK_PORT') or 8765)
+# Cloudflare Access in front of the callback (not secrets): team domain and the Access app's AUD tag. The callback
+# verifies every Cf-Access-Jwt-Assertion against them and refuses all requests when either is missing.
+KITE_ACCESS_TEAM = (os.getenv('KITE_ACCESS_TEAM') or '').strip()
+KITE_ACCESS_AUD = (os.getenv('KITE_ACCESS_AUD') or '').strip()

@@ -6,6 +6,8 @@ pandas>=2.2
 pyarrow>=17.0
 # database (ST-012): psycopg 3 with bundled libpq
 psycopg[binary]>=3.2
+# Kite login callback (ST-006): verify Cloudflare Access JWTs (RS256)
+PyJWT[crypto]>=2.8
 # validation scripts only
 yfinance>=0.2.36
 # tests

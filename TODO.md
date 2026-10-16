@@ -1,7 +1,7 @@
 # TODO.md — open items and resume point
 
 Read at session start (after `TECH_DEBT.md` and the tail of `SESSION_LOG.md`). Tick/remove as done.
-Last updated: 2026-10-15 (ST-016, ST-010, ST-019 resolved; review document written; next: Rakesh's verdict).
+Last updated: 2026-10-16 session close (ST-012 and ST-006 live, each with one check due Sat 17 Oct; then ST-007).
 
 ## Resume here (new conversation)
 0. **Sat 17 Oct, two closing checks:** (a) ST-012 -- homelab confirms the first scheduled stratrad dump (23:30), the

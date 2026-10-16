@@ -66,3 +66,32 @@
   (top 4 by 1-year gain, gain-weighted, average-based exits) added. Preliminary trial 2014-10..2023-12: Nifty 500 12.8%/yr;
   baseline 2.0%; rakesh_top4 faithful 19.4% (max DD -56%); within limits 8.4%. Not yet validated.
 - Slips: a commit landed on main again (branch switch refused); moved with merge + `reset --keep`.
+
+## 2026-10-15 — ST-016, ST-010, ST-019 closed; strategy review written; ST-012 scoped
+- ST-016 closed (merge `150f9da`): Kopia `k13eb1c5` + `history.csv` restore verified (SHA-256 re-checked via X:), old
+  mirror removed, temp backups deleted.
+- ST-010: Test 1 redefined with Rakesh -- level (a) per lot, level (b) per strategy at cost, rolling 12 months; the
+  denominator "all lots bought" was rejected (reused money counted repeatedly) -> worst 12-month rupee loss / Rs 1 L stake.
+  Validator (checks 1-9; tax beyond cash = tax owed) and report card (9 sections) built; prod runs = laptop to the byte;
+  resolved (merge `d6ea9f7`). Rakesh: capital grows only when he allocates more (no cap-growth re-test).
+- ST-019 (from validator check 9: MIRZAINT -86% = RedTape demerger): demergers adjusted like splits, factor = prev close /
+  ex-day **close** (the open is often not the discovered price), falls > 5% only; 94 applied; rakesh_top4 within limits
+  8.4% -> 9.1%/yr; list approved, resolved (merge `5d9e73d`).
+- Strategy review doc (Claude Docs) written: baseline reject, rakesh_top4 within limits = candidate, faithful fails Test 1.
+  Open for Rakesh: verdict; Test 1 and paper profits given back.
+- Slips: killing "python" processes on the laptop killed the connector itself (twice); never stop python processes
+  wholesale. OneDrive locks new folders right after commit ("Deletion of directory failed" on branch switch; harmless).
+
+## 2026-10-16 — ST-012 database live (backup check pending); ST-006 Kite login live (expiry check pending)
+- ST-012: split -- corporate-action merge moved to ST-020 (blocked by MyInvestIQ TD-251). Migration 001 = all 14 tables;
+  `migrate` (checksums), `check_database` (47 permission checks attempted for real). Dev DB added in MyInvestIQ's dev
+  container (Rakesh's question); dev first, then prod: PASS both. Restore test PASS. Homelab: nightly verify-then-rename
+  dump, `Dumps OK?` If node (n8n SSH node never fails on its own -- portfolio_watch fixed too), health check 5 (26 h),
+  `.env` vetoed on the X: share.
+- ST-006: free Personal plan; manual daily login; callback via Cloudflare tunnel + Access (`kite.myinvestiq.ai`); JWT
+  verified (homelab recommendation); thin `requests` client, no order endpoints. First live login 15:47 (76 holdings).
+- ST-007 notes: static IP only for order endpoints; Airtel static IP ruled out; idea = static-IP exit VM (proxy only).
+- Slips: prod DB passwords pasted into chat (rotated with a piped block, nothing printed); `.env` lines held the
+  `<pw>` placeholder; first Kite login used the old app's key (new app `stratrad` created).
+- Status at close: main `d6ce146`. Resume: `TODO.md` item 0 -- ST-012 scheduled-backup report and ST-006 expiry check
+  on Sat 17 Oct, then ST-007.

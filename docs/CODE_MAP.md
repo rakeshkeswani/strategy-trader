@@ -20,6 +20,8 @@ Present tense. Update when a module, entry point or call chain changes.
 | `python -m backtest.run --strategy NAME [--start --end --faithful]` | one backtest (ST-010); refuses to write to a share | `BACKTESTS_DIR/<run_id>/`, `LOG_DIR` |
 | `python -m scripts.validate_backtest RUN_ID [--rerun]` | ST-010 acceptance checks 1-9 on one run folder (`--rerun`: repeatable + no lookahead, 4 re-runs) | `LOG_DIR` (issues .csv + summary .json) |
 | `python -m backtest.report_card RUN_ID [RUN_ID ...]` | plain-language report card per run; 2+ runs also a comparison page | `<run folder>/card.md`, `BACKTESTS_DIR/compare_<start>_<end>.md` |
+| `python -m scripts.migrate [--status]` | ST-012: apply pending `database/migrations/NNN_*.sql` once each (checksum-guarded) | database `stratrad`, `LOG_DIR` |
+| `python -m scripts.check_database` | ST-012 acceptance: tables, UTC, every role's allowed/refused actions tried for real | `LOG_DIR` |
 | `python -m pytest -q tests` | unit tests (no network) | — |
 
 ## Modules
@@ -44,6 +46,9 @@ Present tense. Update when a module, entry point or call chain changes.
 | `scripts/validate_universe.py` | panel vs raw files, review rebuild with data cut at cut-off, survivorship, overlap with NSE's Nifty 500 list |
 | `ingestion/fetch_corporate_actions_history.py` | one call per year, raw JSON kept, `history.csv` written; fails on unclassified subjects |
 | `scripts/validate_corporate_actions.py` | feed re-parse, jump scan (equities), PREVCLOSE probe, yfinance spot check; reads `config/ca_exceptions.csv` |
+| `core/db.py` | `connect('app' / 'reader' / 'myinvestiq')`: psycopg 3, session timezone UTC, URLs from `.env` |
+| `database/migrations/001_initial_schema.sql` | the 14 tables of docs/DATA_MODEL.md s.4; `audit_log` append-only trigger; strategy `manual` seeded; SELECT for `stratrad_reader` |
+| `database/setup_roles.sql` | superuser, once: the three roles, database `stratrad`, `stratrad_ro` grants on `portfolio_watch` |
 | `core/demergers.py` | `feed_records()` (EQ demerger/scheme records), `candidates()` (factor = prev close / ex-day close; falls > 5% applied), `merge_reviewed()`, `load_demergers()` (applied rows as actions, kind `demerger`) |
 | `core/adjusted.py` | `actions_frame()`, `series_factors()` (split + demerger factors per series; demergers price-only), `adjust()` |
 | `backtest/run.py` | `load_market(start, end, panel_hook)`, `run_backtest()` (no files), `write_outputs()`, `headline()` (Test 1 = worst rolling 12-month rupee loss at cost / stake), `pnl_at_cost()`, `lot_pnl()` |

@@ -4,6 +4,8 @@ python-dotenv>=1.0.0
 # data: price panel + universe (ST-004); pandas was previously only a yfinance dependency
 pandas>=2.2
 pyarrow>=17.0
+# database (ST-012): psycopg 3 with bundled libpq
+psycopg[binary]>=3.2
 # validation scripts only
 yfinance>=0.2.36
 # tests

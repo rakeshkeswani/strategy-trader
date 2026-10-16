@@ -6,8 +6,8 @@ Last updated: 2026-10-15 (ST-016, ST-010, ST-019 resolved; review document writt
 ## Resume here (new conversation)
 1. **Strategy verdict (Rakesh):** review document "stratrad strategy review: ST-010 backtests 2014-2023" (Claude
    Docs artifact, numbers after ST-019) holds the cards, comparison, Claude's recommendations and the card change list.
-   Open for Rakesh: verdict per strategy; should the Rs 1 L at-cost cap grow with realised gains (re-test, recorded)?;
-   should Test 1 see paper profits given back (ST-010.md "Still open")? Claude adds Rakesh's questions to the change list.
+   Open for Rakesh: verdict per strategy; should Test 1 see paper profits given back (ST-010.md "Still open")?
+   Decided 2026-10-15: capital grows only when Rakesh allocates more (no cap-growth re-test). No card observations yet.
 2. Then ST-012 (database; before execution) → ST-006/007/008/009/011; ST-005 (sectors); ST-017/018 later.
 3. Prod SSH paste glitch: `echo 'set enable-bracketed-paste off' >> ~/.inputrc` (new session), or update PuTTY.
 

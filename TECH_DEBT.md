@@ -11,7 +11,7 @@ Workflow, status values and gates: `CLAUDE.md` → "Change workflow".
 | [ST-003](tech-debt/ST-003.md) | Split/bonus adjustment (corporate actions) — history 2014..2025-08-25 | High | Resolved | 2026-10-08 | data | — (prod confirmed 2026-10-11, merge `bf2f689`) |
 | [ST-004](tech-debt/ST-004.md) | Point-in-time top-500 universe | High | Resolved | 2026-10-08 | data | — (prod confirmed 2026-10-14, merge `1fe1a08`) |
 | [ST-005](tech-debt/ST-005.md) | Trendlyne weekly drop + importer | Med | Not started | 2026-10-08 | data | — |
-| [ST-006](tech-debt/ST-006.md) | Kite Connect app + daily login | High | Not started | 2026-10-08 | execution | — |
+| [ST-006](tech-debt/ST-006.md) | Kite Connect app + daily login | High | In progress — branch st/ST-006-kite-login | 2026-10-08 | execution | Cloudflare hostname + Access (homelab); stratrad app (Rakesh) |
 | [ST-007](tech-debt/ST-007.md) | Mumbai VM order gateway (static IP, Tailscale) | High | Not started | 2026-10-08 | execution | — |
 | [ST-008](tech-debt/ST-008.md) | Guardrail service + guardrails.yaml | High | Not started | 2026-10-08 | execution | — |
 | [ST-009](tech-debt/ST-009.md) | GTT stops, trailing, daily reconciliation | High | Not started | 2026-10-08 | execution | — |

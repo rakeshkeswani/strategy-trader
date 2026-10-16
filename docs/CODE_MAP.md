@@ -22,6 +22,8 @@ Present tense. Update when a module, entry point or call chain changes.
 | `python -m backtest.report_card RUN_ID [RUN_ID ...]` | plain-language report card per run; 2+ runs also a comparison page | `<run folder>/card.md`, `BACKTESTS_DIR/compare_<start>_<end>.md` |
 | `python -m scripts.migrate [--status]` | ST-012: apply pending `database/migrations/NNN_*.sql` once each (checksum-guarded) | database `stratrad`, `LOG_DIR` |
 | `python -m scripts.check_database` | ST-012 acceptance: tables, UTC, every role's allowed/refused actions tried for real | `LOG_DIR` |
+| `python -m execution.kite_callback` | ST-006: the Kite login callback (systemd `stratrad-kite-callback` on prod; 127.0.0.1:8765) | `KITE_SESSION_FILE`, `audit_log`, `LOG_DIR/kite_callback.log` |
+| `python -m scripts.kite_check` | ST-006: read-only check of today's Kite session (masked user, funds, holdings count) | stdout |
 | `python -m pytest -q tests` | unit tests (no network) | — |
 
 ## Modules
@@ -46,6 +48,8 @@ Present tense. Update when a module, entry point or call chain changes.
 | `scripts/validate_universe.py` | panel vs raw files, review rebuild with data cut at cut-off, survivorship, overlap with NSE's Nifty 500 list |
 | `ingestion/fetch_corporate_actions_history.py` | one call per year, raw JSON kept, `history.csv` written; fails on unclassified subjects |
 | `scripts/validate_corporate_actions.py` | feed re-parse, jump scan (equities), PREVCLOSE probe, yfinance spot check; reads `config/ca_exceptions.csv` |
+| `core/kite.py` | ST-006: `exchange_token()`, `save_session()` / `load_session()` (refuses a session issued before the last 06:00 IST: `LoginNeeded`), read-only `Client` (profile, margins, holdings; no order endpoints), `login_url()`, `mask()` |
+| `execution/kite_callback.py` | ST-006: `handle()` (path, Cloudflare Access header, status, exchange, save, audit) behind a 127.0.0.1-only `http.server`; access log without the query string |
 | `core/db.py` | `connect('app' / 'reader' / 'myinvestiq')`: psycopg 3, session timezone UTC, URLs from `.env` |
 | `database/migrations/001_initial_schema.sql` | the 14 tables of docs/DATA_MODEL.md s.4; `audit_log` append-only trigger; strategy `manual` seeded; SELECT for `stratrad_reader` |
 | `database/setup_roles.sql` | superuser, once: the three roles, database `stratrad`, `stratrad_ro` grants on `portfolio_watch` |

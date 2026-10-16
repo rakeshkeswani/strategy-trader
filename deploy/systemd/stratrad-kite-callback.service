@@ -1,0 +1,27 @@
+# deploy/systemd/stratrad-kite-callback.service -- ST-006: the Kite login callback on rkneo50q.
+# Install (prod, once):
+#   sudo cp deploy/systemd/stratrad-kite-callback.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now stratrad-kite-callback
+# Listens on 127.0.0.1:8765 only; reached through the Cloudflare tunnel (kite.myinvestiq.ai, behind Cloudflare Access).
+# Settings come from /home/rakeshbk/stratrad/.env (core/config.py loads it).
+
+[Unit]
+Description=stratrad Kite login callback (ST-006)
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=rakeshbk
+Group=rakeshbk
+WorkingDirectory=/home/rakeshbk/stratrad
+ExecStart=/home/rakeshbk/stratrad/venv/bin/python -m execution.kite_callback
+Restart=on-failure
+RestartSec=10
+UMask=0077
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

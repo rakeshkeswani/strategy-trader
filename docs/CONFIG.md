@@ -73,7 +73,10 @@ Fetchers refuse to write to a `//host/...` path, so Windows can never write into
 | `STRATRAD_DB_URL` | — (required for DB scripts) | `postgresql://stratrad_app:<pw>@localhost:5432/stratrad` | `core/db.py` `connect('app')`, `migrate`, `check_database` |
 | `STRATRAD_READER_URL` | — | `postgresql://stratrad_reader:<pw>@localhost:5432/stratrad` | `connect('reader')`, `check_database` |
 | `MYINVESTIQ_RO_URL` | — | `postgresql://stratrad_ro:<pw>@localhost:5432/portfolio_watch` | `connect('myinvestiq')` (ST-020), `check_database` |
-| `TRENDLYNE_DROP_DIR`, `KITE_*`, `TELEGRAM_*`, `ANTHROPIC_API_KEY` | — | not yet set | later STs |
+| `KITE_API_KEY`, `KITE_API_SECRET` | — (prod only) | stratrad's own Kite Connect app (Personal, free) | `core/kite.py`; never printed or logged |
+| `KITE_SESSION_FILE` | `~/.stratrad/kite_session.json` | default | the day's session (mode 600, folder 700; outside the repo and the backup mirror; expires 06:00 IST) |
+| `KITE_CALLBACK_PORT` | `8765` | default | `execution/kite_callback.py` (127.0.0.1 only) |
+| `TRENDLYNE_DROP_DIR`, `TELEGRAM_*`, `ANTHROPIC_API_KEY` | — | not yet set | later STs |
 
 Windows dev reading prod data: set `BHAVCOPY_ARCHIVE_DIR=//100.103.189.15/myinvestiq/data/bhavcopy`,
 `LEGACY_BHAVCOPY_DIR=//100.103.189.15/stratrad/data/bhavcopy_legacy`,
@@ -117,6 +120,18 @@ refused): check prod `.env` from a prod shell, masked.
 Database dump verified 2026-10-16 (by hand): `stratrad_20261016.dump` 55,393 bytes at 12:57:39 IST, `pg_restore
 --list` = 15 tables incl. `audit_log`, `schema_migrations`; failure test (missing database) exit 1, no `.part` left.
 Pending: the first scheduled run (23:30 dump, 01:00 Kopia, 02:30 check 5).
+
+## Kite login (ST-006)
+
+| | |
+|---|---|
+| App | stratrad's own Kite Connect **Personal** app (free; orders, GTT, portfolio; no market data). The older Personal app "Zerodha Integration" (2025-08-18) is left untouched |
+| Daily login | manual: Rakesh opens the bookmarked login link (`https://kite.zerodha.com/connect/login?v=3&api_key=<KITE_API_KEY>`), password + TOTP. Not automated (regulation's intent; his daily "trade today"). No login = no trading that day |
+| Redirect URL | `https://kite.myinvestiq.ai/kite/callback` -> Cloudflare tunnel -> `127.0.0.1:8765` on rkneo50q; Cloudflare Access allows only `rakeshbk@gmail.com`; the callback also refuses requests without the `Cf-Access-Jwt-Assertion` header |
+| Service | systemd `stratrad-kite-callback` (`deploy/systemd/stratrad-kite-callback.service`, user rakeshbk, restart on failure); log `LOG_DIR/kite_callback.log` (never the query string or a token) |
+| Session | `KITE_SESSION_FILE`; refused by `core/kite.py` once issued before the most recent 06:00 IST; each login -> `audit_log` (`kite_login`, masked user, no token) |
+| Check | `python -m scripts.kite_check` (read-only: masked user, equity funds, holdings count) |
+| Static IP | only order endpoints need it (SEBI, since 2026-04-01) -> ST-007 |
 
 ## Scheduled jobs
 

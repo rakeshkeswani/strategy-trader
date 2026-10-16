@@ -61,3 +61,10 @@ BENCHMARK_DIR = _dir_from_env('BENCHMARK_DIR', REPO_ROOT / 'data' / 'benchmark')
 STRATRAD_DB_URL = (os.getenv('STRATRAD_DB_URL') or '').strip()
 STRATRAD_READER_URL = (os.getenv('STRATRAD_READER_URL') or '').strip()
 MYINVESTIQ_RO_URL = (os.getenv('MYINVESTIQ_RO_URL') or '').strip()
+
+# ST-006: Kite Connect (stratrad's own Personal app). Key and secret only in prod .env; never printed or logged.
+# The day's session (access token) lives OUTSIDE the repo and the backup mirror, mode 600; it expires at 06:00 IST.
+KITE_API_KEY = (os.getenv('KITE_API_KEY') or '').strip()
+KITE_API_SECRET = (os.getenv('KITE_API_SECRET') or '').strip()
+KITE_SESSION_FILE = Path(os.getenv('KITE_SESSION_FILE') or (Path.home() / '.stratrad' / 'kite_session.json'))
+KITE_CALLBACK_PORT = int(os.getenv('KITE_CALLBACK_PORT') or 8765)
